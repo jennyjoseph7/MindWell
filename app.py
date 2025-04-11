@@ -1,96 +1,86 @@
-import os
-import logging
-from flask import Flask, render_template, request, redirect, url_for, flash
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-from sqlalchemy.orm import DeclarativeBase
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask_wtf.csrf import CSRFProtect
+from transformers import pipeline
+import google.generativeai as genai
+from datetime import datetime
+import json
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
-
-class Base(DeclarativeBase):
-    pass
-
-db = SQLAlchemy(model_class=Base)
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET")
+app.secret_key = 'your-secret-key-here'  # Change this to a secure secret key in production
 
-# Configure SQLAlchemy
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///mental_health.db")
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_recycle": 300,
-    "pool_pre_ping": True,
-}
-db.init_app(app)
+# Initialize CSRF protection
+csrf = CSRFProtect(app)
 
-# Configure Flask-Login
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
+# Initialize models
+emotion_classifier = pipeline(
+    "text-classification",
+    model="j-hartmann/emotion-english-distilroberta-base",
+    top_k=None
+)
 
-# Import models
-from models import User
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
+# Configure Gemini API
+genai.configure(api_key="YOUR_API_KEY_HERE")  # Replace with your actual Gemini API key
+gemini_model = genai.GenerativeModel("gemini-pro")
+chat_session = gemini_model.start_chat()
 
 @app.route('/')
-def index():
-    return render_template('index.html')
+def ai_chat():
+    if 'chat_history' not in session:
+        session['chat_history'] = []
+    return render_template('ai/chat.html', messages=session['chat_history'])
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-    
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        user = User.query.filter_by(email=email).first()
-        
-        if user and check_password_hash(user.password_hash, password):
-            login_user(user)
-            flash('Logged in successfully!', 'success')
-            return redirect(url_for('index'))
-        flash('Invalid email or password', 'error')
-    
-    return render_template('auth/login.html')
+@app.route('/new_chat')
+def new_chat():
+    session['chat_history'] = []
+    return redirect(url_for('ai_chat'))
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
+@app.route('/send_message', methods=['POST'])
+def send_message():
+    user_input = request.json.get('message')
     
-    if request.method == 'POST':
-        username = request.form.get('username')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        
-        if User.query.filter_by(email=email).first():
-            flash('Email already registered', 'error')
-            return redirect(url_for('register'))
-        
-        user = User(
-            username=username,
-            email=email,
-            password_hash=generate_password_hash(password)
-        )
-        db.session.add(user)
-        db.session.commit()
-        
-        flash('Registration successful! Please login.', 'success')
-        return redirect(url_for('login'))
+    if not user_input:
+        return jsonify({'error': 'Empty message'}), 400
     
-    return render_template('auth/register.html')
+    try:
+        # Emotion detection
+        emotion_results = emotion_classifier(user_input)
+        emotions = {res['label']: res['score'] for res in emotion_results[0]}
+        dominant_emotion = max(emotions.items(), key=lambda x: x[1])[0]
+        
+        # Construct prompt for Gemini
+        prompt = f"The user seems to be feeling {dominant_emotion}. Here's their message: '{user_input}'. Respond appropriately with empathy."
+        
+        # Get response from Gemini
+        response = chat_session.send_message(prompt)
+        
+        # Determine sentiment based on dominant emotion
+        sentiment = 'POSITIVE' if dominant_emotion in ['joy', 'love'] else 'NEGATIVE'
+        if dominant_emotion in ['neutral']:
+            sentiment = 'NEUTRAL'
+        
+        # Save to session
+        message_data = {
+            'user_message': user_input,
+            'ai_response': response.text,
+            'timestamp': datetime.now(),
+            'sentiment': sentiment,
+            'emotions': emotions
+        }
+        
+        if 'chat_history' not in session:
+            session['chat_history'] = []
+        
+        session['chat_history'].append(message_data)
+        session.modified = True
+        
+        return jsonify({
+            'response': response.text,
+            'sentiment': sentiment,
+            'emotions': emotions
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    flash('Logged out successfully', 'success')
-    return redirect(url_for('index'))
-
-with app.app_context():
-    db.create_all()
+if __name__ == '__main__':
+    app.run(debug=True) 
