@@ -36,42 +36,39 @@
                                 <div id="current-track-name" class="track-title">Select a mood to start</div>
                                 <div id="current-track-artist" class="track-artist">Choose your mood above</div>
                             </div>
-                        </div>
-                        
-                        <div class="progress">
-                            <div class="progress-bar-fill"></div>
-                        </div>
-                        
-                        <div class="track-time">
-                            <span id="current-time">0:00</span>
-                            <span id="total-time">0:00</span>
-                        </div>
-                        
-                        <div class="player-controls">
-                            <button id="btn-repeat" class="control-button">
-                                <i class="fas fa-redo"></i>
-                            </button>
-                            <button id="btn-backward" class="control-button">
-                                <i class="fas fa-backward"></i>
-                            </button>
-                            <button id="btn-prev" class="control-button">
-                                <i class="fas fa-step-backward"></i>
-                            </button>
-                            <button id="btn-play" class="control-button">
-                                <i class="fas fa-play"></i>
-                            </button>
-                            <button id="btn-next" class="control-button">
-                                <i class="fas fa-step-forward"></i>
-                            </button>
-                            <button id="btn-forward" class="control-button">
-                                <i class="fas fa-forward"></i>
-                            </button>
-                            <button id="btn-shuffle" class="control-button">
-                                <i class="fas fa-random"></i>
-                            </button>
-                            <div class="volume-control">
-                                <i class="fas fa-volume-up"></i>
-                                <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="80">
+                            <div class="progress-container">
+                                <span id="current-time" class="time">0:00</span>
+                                <div class="progress">
+                                    <div class="progress-bar-fill"></div>
+                                </div>
+                                <span id="total-time" class="time">0:00</span>
+                            </div>
+                            <div class="player-controls">
+                                <button id="btn-repeat" class="control-button">
+                                    <i class="fas fa-redo"></i>
+                                </button>
+                                <button id="btn-backward" class="control-button">
+                                    <i class="fas fa-backward"></i>
+                                </button>
+                                <button id="btn-prev" class="control-button">
+                                    <i class="fas fa-step-backward"></i>
+                                </button>
+                                <button id="btn-play" class="control-button">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                <button id="btn-next" class="control-button">
+                                    <i class="fas fa-step-forward"></i>
+                                </button>
+                                <button id="btn-forward" class="control-button">
+                                    <i class="fas fa-forward"></i>
+                                </button>
+                                <button id="btn-shuffle" class="control-button">
+                                    <i class="fas fa-random"></i>
+                                </button>
+                                <div class="volume-control">
+                                    <i class="fas fa-volume-up"></i>
+                                    <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="80">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -99,12 +96,12 @@
                     </div>
                 </div>
                 
-                <!-- Music Therapy Tips Card -->
-                <div class="card music-tip-card">
-                    <div class="card-header-with-action">
-                        <h3>Music Therapy Tip</h3>
-                        <button id="btn-refresh-tip" class="btn-refresh-tip" title="Get new tip">
-                            <i class="fas fa-lightbulb"></i>
+                <!-- Music Therapy Tips Card (improved UI) -->
+                <div class="card music-tip-card" id="music-tip-card">
+                    <div class="card-header-with-action d-flex align-items-center justify-content-between">
+                        <h3 class="mb-0">Music Therapy Tip</h3>
+                        <button id="btn-next-tip" class="btn-next-tip" title="Next tip">
+                            <i class="fas fa-sync-alt"></i>
                         </button>
                     </div>
                     <div id="tip-content" class="tip-content">
@@ -127,24 +124,22 @@
     <!-- Notification Area -->
     <div id="notification-area" class="notification-area"></div>
     
-    <!-- Mood Feedback Form -->
+    <!-- Mood Feedback Form (modern UI) -->
     <div id="mood-feedback-area" class="mood-feedback-area">
-        <div class="mood-feedback-container">
-            <button id="btn-close-feedback-x" class="btn-close-feedback-x">
+        <div class="mood-feedback-container feedback-modern-card">
+            <button id="btn-close-feedback-x" class="btn-close-feedback-x" aria-label="Close">
                 <i class="fas fa-times"></i>
             </button>
-            
             <div class="feedback-form-header">
-                <h3>How was your session?</h3>
-                <button id="btn-close-feedback" class="btn-close-feedback">
+                <h3 class="feedback-title">How was your session?</h3>
+                <button id="btn-close-feedback" class="btn-close-feedback" aria-label="Close">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            
             <form id="mood-feedback-form">
                 <div class="feedback-form-group">
-                    <label for="final-mood">How do you feel now?</label>
-                    <select id="final-mood" name="final-mood" required>
+                    <label for="final-mood" class="form-label">How do you feel now?</label>
+                    <select id="final-mood" name="final-mood" class="form-select" required>
                         <option value="">-- Select --</option>
                         <option value="much_better">Much Better</option>
                         <option value="somewhat_better">Somewhat Better</option>
@@ -153,24 +148,73 @@
                         <option value="much_worse">Much Worse</option>
                     </select>
                 </div>
-                
                 <div class="feedback-form-group">
-                    <label for="effectiveness-rating">Rate the effectiveness (1-5)</label>
-                    <input type="number" id="effectiveness-rating" name="effectiveness-rating" min="1" max="5" required>
+                    <label for="effectiveness-rating" class="form-label">Rate the effectiveness <span class="text-muted">(1-5)</span></label>
+                    <input type="number" id="effectiveness-rating" name="effectiveness-rating" class="form-control" min="1" max="5" required>
                 </div>
-                
                 <div class="feedback-form-group">
-                    <label for="session-notes">Any notes about your experience?</label>
-                    <textarea id="session-notes" name="session-notes" placeholder="Optional: Share your thoughts on this music therapy session"></textarea>
+                    <label for="session-notes" class="form-label">Any notes about your experience?</label>
+                    <textarea id="session-notes" name="session-notes" class="form-control" rows="3" placeholder="Optional: Share your thoughts on this music therapy session"></textarea>
                 </div>
-                
-                <button type="submit" class="btn-submit-feedback">Save Feedback</button>
+                <button type="submit" class="btn-submit-feedback modern-submit-btn">Save Feedback</button>
             </form>
         </div>
     </div>
 </div>
 
+<!-- Add Google Fonts for Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
 <style>
+body, .music-therapy-page {
+    font-family: 'Inter', 'Quicksand', 'Roboto', Arial, sans-serif;
+    color: #205c23;
+}
+
+h2, h3, .section-title {
+    font-family: 'Inter', 'Quicksand', Arial, sans-serif;
+    font-weight: 700;
+    color: #228b22;
+    letter-spacing: -0.5px;
+    margin-bottom: 0.5em;
+}
+
+h2 {
+    font-size: 2.2rem;
+    margin-top: 0.5em;
+}
+
+h3 {
+    font-size: 1.45rem;
+    margin-top: 1.2em;
+}
+
+.music-therapy-page p, .music-therapy-page .subtitle, .music-therapy-page .lead {
+    font-size: 1.08rem;
+    color: #7b8a8b;
+    font-weight: 400;
+    margin-bottom: 1.2em;
+    letter-spacing: 0.01em;
+}
+
+.mood-buttons {
+    margin-bottom: 1.5em;
+}
+
+/* Make mood question stand out */
+.music-therapy-page h3 {
+    color: #218838;
+    font-size: 1.35rem;
+    font-weight: 600;
+    margin-bottom: 0.7em;
+}
+
+/* Improve spacing for top section */
+.music-therapy-page .card > h2, .music-therapy-page .card > h3 {
+    margin-top: 0.7em;
+    margin-bottom: 0.3em;
+}
+
 /* Color Variables */
 :root {
     --text-primary: #2C3E50;
@@ -189,6 +233,36 @@
     --sunset-orange: #FFA07A;
     --lavender: #E6E6FA;
     --soft-pink: #FFB6C1;
+    --deep-indigo: #4B0082;
+    --midnight-blue: #191970;
+    --red: #FF0000;
+    --electric-blue: #00FFFF;
+    --lime-green: #00FF00;
+    --teal: #008080;
+    --navy-blue: #000080;
+    --forest-green: #228B22;
+    --dusty-rose: #D295BF;
+    --peach-pink: #FFDAB9;
+    --golden-yellow: #FFD700;
+    --purple-haze: #800080;
+    --turquoise-blue: #40E0D0;
+    --salmon-pink: #FA8072;
+    --deep-purple: #800080;
+    --bright-yellow: #FFD700;
+    --light-blue: #ADD8E6;
+    --dark-green: #006B3C;
+    --orange-peel: #FFA500;
+    --light-green: #90EE90;
+    --dark-blue: #00008B;
+    --warm-orange: #FFA500;
+    --mint-green: #98FF98;
+    --pale-aqua: #E0FFFF;
+    --cool-green: #90EE90;
+    --vibrant-red: #FF0000;
+    --vibrant-yellow: #FFFF00;
+    --vibrant-blue: #0000FF;
+    --vibrant-green: #00FF00;
+    
     
     /* UI Colors */
     --card-bg: rgba(255, 255, 255, 0.92);
@@ -252,32 +326,32 @@ h2, h3 {
 }
 
 .mood-button[data-mood="calm"] {
-    background: linear-gradient(135deg, var(--sky-blue), var(--water-blue));
+    background: linear-gradient(135deg, var(--earth-brown), var(--mint-green));
     box-shadow: 0 4px 15px rgba(95, 168, 211, 0.3);
 }
 
 .mood-button[data-mood="happy"] {
-    background: linear-gradient(135deg, var(--leaf-green), var(--sage-green));
+    background: linear-gradient(135deg, var(--vibrant-yellow), var(--vibrant-blue));
     box-shadow: 0 4px 15px rgba(123, 174, 127, 0.3);
 }
 
 .mood-button[data-mood="sad"] {
-    background: linear-gradient(135deg, var(--lavender), var(--soft-pink));
+    background: linear-gradient(135deg, var(--vibrant-red), var(--vibrant-green));
     box-shadow: 0 4px 15px rgba(230, 230, 250, 0.3);
 }
 
 .mood-button[data-mood="focus"] {
-    background: linear-gradient(135deg, var(--forest-green), var(--moss-green));
+    background: linear-gradient(135deg, var(--turquoise-blue), var(--salmon-pink));
     box-shadow: 0 4px 15px rgba(46, 125, 50, 0.3);
 }
 
 .mood-button[data-mood="energetic"] {
-    background: linear-gradient(135deg, var(--sunset-orange), var(--sand-beige));
+    background: linear-gradient(135deg, var(--red), var(--sand-beige));
     box-shadow: 0 4px 15px rgba(255, 160, 122, 0.3);
 }
 
 .mood-button[data-mood="sleep"] {
-    background: linear-gradient(135deg, var(--water-blue), var(--lavender));
+    background: linear-gradient(135deg, var(--midnight-blue), var(--dusty-rose));
     box-shadow: 0 4px 15px rgba(95, 168, 211, 0.3);
 }
 
@@ -310,21 +384,33 @@ h2, h3 {
 }
 
 /* Progress Bar */
-.progress {
-    height: 8px;
-    background: rgba(126, 174, 127, 0.1);
-    border-radius: 4px;
-    margin-bottom: 15px;
-    cursor: pointer;
-    position: relative;
+.progress-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 18px 0 8px 0;
 }
-
+.progress {
+    flex: 1 1 auto;
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
 .progress-bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--forest-green), var(--moss-green));
+    background: linear-gradient(90deg, #43a047, #81c784);
     border-radius: 4px;
-    width: 0;
-    transition: width 0.1s ease;
+    width: 0%;
+    transition: width 0.2s;
+}
+.time {
+    font-size: 0.98rem;
+    color: #607d8b;
+    min-width: 44px;
+    text-align: center;
 }
 
 /* Track List */
@@ -332,23 +418,102 @@ h2, h3 {
     max-height: 300px;
     overflow-y: auto;
     padding-right: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    scrollbar-width: thin;
+    scrollbar-color: #81c784 #f1f8e9;
 }
-
+.track-list::-webkit-scrollbar {
+    width: 8px;
+    background: #f1f8e9;
+    border-radius: 8px;
+}
+.track-list::-webkit-scrollbar-thumb {
+    background: #b2dfdb;
+    border-radius: 8px;
+}
 .track-item {
     display: flex;
     align-items: center;
-    padding: 10px 15px;
-    border-radius: 8px;
-    margin-bottom: 5px;
-    background: rgba(255, 255, 255, 0.7);
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(46,125,50,0.06);
+    padding: 16px 18px;
+    transition: box-shadow 0.2s, background 0.2s, border 0.2s;
     cursor: pointer;
-    transition: all 0.2s ease;
-    border: 1px solid var(--glass-border);
+    border: 2px solid transparent;
+    position: relative;
 }
-
+.track-item.active {
+    background: #e8f5e9;
+    border-color: #43a047;
+    box-shadow: 0 4px 16px rgba(76,175,80,0.10);
+}
 .track-item:hover {
-    background: rgba(255, 255, 255, 0.9);
-    border-color: var(--sage-green);
+    background: #f1f8e9;
+    box-shadow: 0 4px 16px rgba(76,175,80,0.13);
+    border-color: #b2dfdb;
+}
+.track-info {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.track-title {
+    font-weight: 600;
+    font-size: 1.08rem;
+    color: #228b22;
+    margin-bottom: 2px;
+}
+.track-artist {
+    font-size: 0.92rem;
+    color: #607d8b;
+}
+.track-duration {
+    min-width: 48px;
+    text-align: right;
+    font-size: 0.98rem;
+    color: #607d8b;
+    margin-right: 10px;
+}
+.track-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.track-play, .track-queue {
+    background: none;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    font-size: 1.15rem;
+    color: #43a047;
+    padding: 4px 6px;
+    border-radius: 50%;
+    transition: background 0.15s, color 0.15s;
+}
+.track-play:hover, .track-queue:hover {
+    background: #e0f2f1;
+    color: #1b5e20;
+}
+.track-play:active, .track-queue:active {
+    background: #b2dfdb;
+}
+.track-play.playing i {
+    color: #e65100;
+}
+@media (max-width: 600px) {
+    .track-item {
+        padding: 12px 8px;
+    }
+    .track-title {
+        font-size: 1rem;
+    }
+    .track-artist, .track-duration {
+        font-size: 0.9rem;
+    }
 }
 
 /* Feedback Form */
@@ -391,13 +556,49 @@ h2, h3 {
     }
 }
 
-/* Music Tip Card */
+/* Music Tip Card (improved UI) */
 .music-tip-card {
-    border-left: 4px solid var(--sage-green);
+    border-left: 5px solid #43a047;
+    box-shadow: 0 2px 12px rgba(67,160,71,0.07);
+    padding: 24px 24px 20px 24px;
+    margin-bottom: 1.5em;
+    background: #fff;
+    border-radius: 16px;
+    transition: box-shadow 0.2s;
+    min-height: 140px;
 }
-
+.music-tip-card:hover {
+    box-shadow: 0 4px 24px rgba(67,160,71,0.13);
+}
+.card-header-with-action {
+    margin-bottom: 10px;
+}
+.btn-next-tip {
+    background: #e8f5e9;
+    border: none;
+    color: #388e3c;
+    font-size: 1.25rem;
+    border-radius: 50%;
+    padding: 7px 11px;
+    transition: background 0.15s, color 0.15s;
+    box-shadow: 0 1px 4px rgba(67,160,71,0.07);
+}
+.btn-next-tip:hover {
+    background: #c8e6c9;
+    color: #1b5e20;
+}
 .tip-content {
-    color: var(--text-secondary);
+    font-size: 1.08rem;
+    color: #205c23;
+    margin-top: 8px;
+    min-height: 48px;
+    transition: opacity 0.3s;
+}
+.tip-content.fade-out {
+    opacity: 0;
+}
+.tip-content.fade-in {
+    opacity: 1;
 }
 
 /* Feedback Button */
@@ -453,9 +654,167 @@ h2, h3 {
 .text-muted {
     color: var(--text-light) !important;
 }
+
+.feedback-modern-card {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 4px 32px rgba(67,160,71,0.10);
+    padding: 36px 32px 28px 32px;
+    max-width: 420px;
+    width: 95%;
+    margin: 0 auto;
+    position: relative;
+    border: 1.5px solid #e0e0e0;
+    animation: fadeInUp 0.4s cubic-bezier(.4,1.4,.6,1) 1;
+}
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.feedback-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #228b22;
+    margin-bottom: 1.2em;
+}
+.feedback-form-group {
+    margin-bottom: 1.3em;
+}
+.form-label {
+    font-weight: 600;
+    color: #205c23;
+    margin-bottom: 0.4em;
+    display: block;
+}
+.form-select, .form-control, textarea.form-control {
+    width: 100%;
+    padding: 0.7em 1em;
+    border-radius: 10px;
+    border: 1.5px solid #c8e6c9;
+    background: #f8fff8;
+    font-size: 1.05rem;
+    color: #205c23;
+    transition: border 0.2s, box-shadow 0.2s;
+    margin-top: 0.2em;
+    margin-bottom: 0.2em;
+    box-shadow: none;
+}
+.form-select:focus, .form-control:focus, textarea.form-control:focus {
+    border-color: #43a047;
+    outline: none;
+    box-shadow: 0 0 0 2px #c8e6c9;
+    background: #fff;
+}
+textarea.form-control {
+    min-height: 80px;
+    resize: vertical;
+}
+.modern-submit-btn {
+    background: linear-gradient(90deg, #43a047, #81c784);
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.08rem;
+    border: none;
+    border-radius: 10px;
+    padding: 0.7em 2.2em;
+    box-shadow: 0 2px 8px rgba(67,160,71,0.10);
+    transition: background 0.18s, box-shadow 0.18s, transform 0.13s;
+    margin-top: 0.5em;
+    letter-spacing: 0.01em;
+}
+.modern-submit-btn:hover, .modern-submit-btn:focus {
+    background: linear-gradient(90deg, #388e3c, #66bb6a);
+    box-shadow: 0 4px 16px rgba(67,160,71,0.13);
+    transform: translateY(-2px) scale(1.03);
+}
+.btn-close-feedback-x, .btn-close-feedback {
+    background: none;
+    border: none;
+    color: #bdbdbd;
+    font-size: 1.3rem;
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    z-index: 2;
+    transition: color 0.15s;
+}
+.btn-close-feedback-x:hover, .btn-close-feedback:hover {
+    color: #43a047;
+}
+.feedback-form-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.2em;
+    position: relative;
+}
+@media (max-width: 600px) {
+    .feedback-modern-card {
+        padding: 18px 8px 16px 8px;
+        max-width: 99vw;
+    }
+    .feedback-title {
+        font-size: 1.1rem;
+    }
+}
 </style>
 
 <!-- Scripts -->
 <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 <script src="{{ url_for('static', filename='js/music_therapy.js') }}"></script>
+
+<script>
+const musicTips = [
+    "Listening to music with a tempo similar to your desired heart rate can help regulate your physical and emotional state.",
+    "Try instrumental music for focus—lyrics can sometimes distract your mind.",
+    "Upbeat music can boost your mood and energy during the day.",
+    "Soft, slow music can help you relax and fall asleep more easily.",
+    "Singing along to your favorite songs can reduce stress and improve breathing.",
+    "Let music be your companion during walks or exercise for extra motivation.",
+    "Create playlists for different moods: calm, happy, focused, or energetic.",
+    "Take a mindful moment: close your eyes and listen deeply to a song you love.",
+    "Music can evoke memories—use it to revisit positive moments in your life.",
+    "Experiment with new genres to stimulate your brain and creativity."
+];
+let currentTipIndex = 0;
+let tipInterval = null;
+
+function showTip(index) {
+    const tipContent = document.getElementById('tip-content');
+    if (!tipContent) return;
+    tipContent.classList.remove('fade-in');
+    tipContent.classList.add('fade-out');
+    setTimeout(() => {
+        tipContent.textContent = '"' + musicTips[index] + '"';
+        tipContent.classList.remove('fade-out');
+        tipContent.classList.add('fade-in');
+    }, 250);
+}
+
+function nextTip() {
+    currentTipIndex = (currentTipIndex + 1) % musicTips.length;
+    showTip(currentTipIndex);
+}
+
+function startTipInterval() {
+    if (tipInterval) clearInterval(tipInterval);
+    tipInterval = setInterval(() => {
+        nextTip();
+    }, 5000);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initial tip
+    showTip(currentTipIndex);
+    startTipInterval();
+    // Next/refresh button
+    const btnNextTip = document.getElementById('btn-next-tip');
+    if (btnNextTip) {
+        btnNextTip.addEventListener('click', function() {
+            nextTip();
+            startTipInterval(); // reset timer on manual click
+        });
+    }
+});
+</script>
 {% endblock %} 

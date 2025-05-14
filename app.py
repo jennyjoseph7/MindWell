@@ -1,15 +1,79 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_wtf.csrf import CSRFProtect
+from flask_login import LoginManager, current_user, login_user, logout_user, login_required, UserMixin
 from transformers import pipeline
 import google.generativeai as genai
 from datetime import datetime
 import json
+import jinja2
+import os
+from dotenv import load_dotenv
 
-app = Flask(__name__)
-app.secret_key = 'your-secret-key-here'  # Change this to a secure secret key in production
+# Load environment variables
+load_dotenv()
+
+# Set up template folder path
+template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
+                           'src', 'mental_health_tracker', 'templates')
+static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          'src', 'mental_health_tracker', 'static')
+
+# Create app with custom template folder
+app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your-secret-key-here')  # Use environment variable for secret key
 
 # Initialize CSRF protection
 csrf = CSRFProtect(app)
+
+# Initialize Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+# Create a simple User model for testing
+class User(UserMixin):
+    def __init__(self, id):
+        self.id = id
+
+# User loader for Flask-Login
+@login_manager.user_loader
+def load_user(user_id):
+    # Return a mock user for now
+    return User(user_id)
+
+# Add current_user to all templates
+@app.context_processor
+def inject_user():
+    return {'current_user': current_user}
+
+# Add a simple login route
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        user_id = 1  # Mock user ID
+        user = User(user_id)
+        login_user(user)
+        return redirect(url_for('index'))
+    return render_template('auth/login.html')
+
+# Add placeholder dashboard route
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    return render_template('dashboard.html')
+
+# Add placeholder journal list route
+@app.route('/journal')
+@login_required
+def journal_list():
+    return render_template('journal/list.html')
+
+# Add logout route
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
 
 # Initialize models
 emotion_classifier = pipeline(
@@ -19,15 +83,87 @@ emotion_classifier = pipeline(
 )
 
 # Configure Gemini API
-genai.configure(api_key="YOUR_API_KEY_HERE")  # Replace with your actual Gemini API key
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+if not GEMINI_API_KEY:
+    raise ValueError("GEMINI_API_KEY environment variable is not set")
+
+genai.configure(api_key=GEMINI_API_KEY)
 gemini_model = genai.GenerativeModel("gemini-pro")
 chat_session = gemini_model.start_chat()
 
 @app.route('/')
+def index():
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        # Fallback to a simple HTML response if there's a template error
+        return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>MindWell - Mental Health Tracker</title>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+        </head>
+        <body>
+            <div class="container mt-5">
+                <div class="row">
+                    <div class="col-lg-8 mx-auto text-center">
+                        <h1>Welcome to MindWell</h1>
+                        <p class="lead">Your mental health tracker and companion for well-being</p>
+                        <div class="mt-4">
+                            <a href="/login" class="btn btn-primary me-2">Login</a>
+                            <a href="/ai-chat" class="btn btn-success">Try AI Chat</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+@app.route('/ai-chat')
 def ai_chat():
     if 'chat_history' not in session:
         session['chat_history'] = []
-    return render_template('ai/chat.html', messages=session['chat_history'])
+    
+    try:
+        return render_template('ai/chat.html', messages=session['chat_history'])
+    except jinja2.exceptions.TemplateNotFound:
+        # First fallback - try the attached template
+        try:
+            return render_template('chat.html', messages=session['chat_history'])
+        except:
+            # Second fallback - a simple message
+            return """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>AI Chat | Mental Health Tracker</title>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+            </head>
+            <body>
+                <div class="container mt-5">
+                    <div class="row">
+                        <div class="col-lg-8 mx-auto">
+                            <div class="card shadow">
+                                <div class="card-header bg-primary text-white">
+                                    <h2 class="mb-0">AI Chat Assistant</h2>
+                                </div>
+                                <div class="card-body">
+                                    <p>AI Chat feature is under development.</p>
+                                    <p>Please try again later or <a href="/">return to the home page</a>.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
 
 @app.route('/new_chat')
 def new_chat():
@@ -36,6 +172,9 @@ def new_chat():
 
 @app.route('/send_message', methods=['POST'])
 def send_message():
+    if not request.is_json:
+        return jsonify({'error': 'Request must be JSON'}), 400
+    
     user_input = request.json.get('message')
     
     if not user_input:
@@ -48,7 +187,7 @@ def send_message():
         dominant_emotion = max(emotions.items(), key=lambda x: x[1])[0]
         
         # Construct prompt for Gemini
-        prompt = f"The user seems to be feeling {dominant_emotion}. Here's their message: '{user_input}'. Respond appropriately with empathy."
+        prompt = f"The user seems to be feeling {dominant_emotion}. Here's their message: '{user_input}'. Respond appropriately with empathy and support, focusing on mental health and wellbeing. Keep the response concise and helpful."
         
         # Get response from Gemini
         response = chat_session.send_message(prompt)
@@ -60,10 +199,10 @@ def send_message():
         
         # Save to session
         message_data = {
-            'user_message': user_input,
-            'ai_response': response.text,
-            'timestamp': datetime.now(),
-            'sentiment': sentiment,
+            'message': user_input,
+            'response': response.text,
+            'timestamp': datetime.now().isoformat(),
+            'sentiment_label': sentiment,
             'emotions': emotions
         }
         
@@ -75,12 +214,13 @@ def send_message():
         
         return jsonify({
             'response': response.text,
-            'sentiment': sentiment,
+            'sentiment_label': sentiment,
             'emotions': emotions
         })
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f"Error in send_message: {str(e)}")
+        return jsonify({'error': 'An error occurred while processing your message. Please try again.'}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True) 
+    app.run(host='0.0.0.0', port=5000, debug=True) 

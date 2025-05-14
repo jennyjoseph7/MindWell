@@ -873,19 +873,34 @@
     background-image: url('../img/nature-spa.jpg');
 }
 
-/* Responsive Styles */
+/* Enhanced Mobile Responsiveness */
 @media (max-width: 992px) {
     .dashboard-header {
         padding: 40px 0 30px;
     }
-    
+
     .dashboard-title {
         font-size: 2rem;
     }
-    
+
     .mood-insights {
         flex-direction: column;
-        gap: 15px;
+    }
+
+    .glass-card {
+        margin-bottom: 20px;
+    }
+
+    .welcome-section .row {
+        flex-direction: column;
+    }
+
+    .action-card {
+        margin-bottom: 15px;
+    }
+
+    .nature-elements {
+        display: none; /* Hide decorative elements on mobile */
     }
 }
 
@@ -893,35 +908,165 @@
     .dashboard-header {
         padding: 30px 0 20px;
     }
-    
+
     .dashboard-title {
         font-size: 1.8rem;
     }
-    
+
     .welcome-section .row {
+        margin: 0;
+    }
+
+    .daily-progress {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .glass-card {
+        padding: 20px;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+    }
+
+    .heading-text h3 {
+        font-size: 1.3rem;
+    }
+
+    .timeline-item {
         flex-direction: column;
     }
-    
-    .daily-progress {
-        justify-content: center;
-        margin-top: 20px;
+
+    .timeline-icon {
+        margin-bottom: 15px;
+    }
+
+    .journal-entry {
+        padding: 15px;
+    }
+
+    .entry-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .entry-date {
+        margin-top: 5px;
     }
 }
 
 @media (max-width: 576px) {
     .glass-card {
         padding: 15px;
+        margin: 10px 0;
     }
-    
+
     .dashboard-title {
         font-size: 1.5rem;
     }
-    
+
     .section-title {
+        font-size: 1.3rem;
+    }
+
+    .heading-text h3 {
         font-size: 1.2rem;
     }
-    
-    .heading-text h3 {
+
+    .welcome-heading {
+        font-size: 1.4rem;
+    }
+
+    .welcome-text {
+        font-size: 1rem;
+    }
+
+    .nature-badge {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    .btn-view-all,
+    .btn-refresh,
+    .btn-read-more,
+    .btn-add-entry,
+    .btn-explore {
+        padding: 8px 15px;
+        font-size: 0.9rem;
+    }
+
+    .insight-item,
+    .tip-item {
+        padding: 12px;
+    }
+
+    .insight-text h5,
+    .tip-content h5 {
+        font-size: 1rem;
+    }
+
+    .insight-text p,
+    .tip-content p {
+        font-size: 0.9rem;
+    }
+
+    .timeline-content h5 {
+        font-size: 1rem;
+    }
+
+    .timeline-content p {
+        font-size: 0.9rem;
+    }
+
+    .entry-header h4 {
         font-size: 1.1rem;
+    }
+
+    .entry-content p {
+        font-size: 0.9rem;
+    }
+
+    .resource-content h4 {
+        font-size: 1.1rem;
+    }
+
+    .resource-content p {
+        font-size: 0.9rem;
+    }
+}
+
+/* Add touch-friendly styles for mobile */
+@media (hover: none) {
+    .glass-card:hover {
+        transform: none;
+    }
+
+    .action-card:hover {
+        transform: none;
+    }
+
+    .btn-view-all:hover,
+    .btn-refresh:hover,
+    .btn-read-more:hover,
+    .btn-add-entry:hover,
+    .btn-explore:hover {
+        transform: none;
+    }
+
+    .journal-entry:hover {
+        transform: none;
+    }
+
+    .resource-card:hover {
+        transform: none;
+    }
+}
+
+/* Fix for iOS Safari 100vh issue */
+@supports (-webkit-touch-callout: none) {
+    .dashboard-page {
+        min-height: -webkit-fill-available;
     }
 }

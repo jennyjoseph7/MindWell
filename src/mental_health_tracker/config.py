@@ -19,10 +19,13 @@ except Exception as e:
 # For production, set it as an environment variable: export GEMINI_API_KEY='your-api-key'
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
+# Get a Google API key from: https://ai.google.dev/ (Gemini API)
 # Development fallback - DO NOT USE IN PRODUCTION
 if not GEMINI_API_KEY or GEMINI_API_KEY == 'YOUR_API_KEY_HERE':
     logger.warning("Using development API key. Please set GEMINI_API_KEY for production use.")
-    GEMINI_API_KEY = "AIzaSyDaUJr7_CYqGC-nD-M8oVVS4Ey_BgXyBKE"  # Development key only
+    # This is a placeholder key and won't work in production
+    GEMINI_API_KEY = "AIzaSyDaUJr7_CYqGC-nD-M8oVVS4Ey_BgXyBKE"
+    logger.warning("To use Gemini features, get an API key from https://ai.google.dev/ and set it as GEMINI_API_KEY in .env")
 
 # Flask Configuration
 SECRET_KEY = os.getenv('FLASK_SECRET_KEY', os.urandom(24))

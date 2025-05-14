@@ -32,7 +32,9 @@
         <div class="glass-card journal-form-card">
             <div class="card-glow"></div>
             <form method="POST" class="journal-form">
-                {{ form.csrf_token }}
+                {% if form.csrf_token is defined %}
+                    {{ form.csrf_token }}
+                {% endif %}
                 
                 <div class="form-group mb-4">
                     {{ form.title.label(class="form-label") }}

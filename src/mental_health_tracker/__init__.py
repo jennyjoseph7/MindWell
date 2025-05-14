@@ -33,7 +33,7 @@ from .models import (
 )
 
 # Import utility functions
-from .utils.ai_utils import analyze_sentiment, analyze_emotions, get_mood_patterns, generate_chat_response
+from .utils.ai_utils import analyze_sentiment, analyze_emotions, generate_chat_response
 
 # Authentication forms
 class LoginForm(FlaskForm):
@@ -388,8 +388,8 @@ def create_app(test_config=None):
             # Save chat history
             chat = ChatHistory(
                 user_id=current_user.id,
-                user_message=message,
-                ai_response=response,
+                message=message,
+                response=response,
                 timestamp=datetime.utcnow()
             )
             db.session.add(chat)
@@ -912,7 +912,7 @@ def create_app(test_config=None):
             mood_entry = MoodEntry(
                 user_id=current_user.id,
                 mood_score=mood_score,
-                mood_note=mood_note,
+                notes=mood_note,
                 date_created=datetime.now()
             )
             
@@ -935,10 +935,10 @@ def create_app(test_config=None):
     
     @app.route('/music')
     def music_redirect():
-        # Redirect /music to /music-dashboard
+        # Redirect /music to /hboard
         return redirect(url_for('music_dashboard'))
         
-    @app.route('/music-dashboard')
+    @app.route('/hboard')
     def music_dashboard():
         if not current_user.is_authenticated:
             return render_template('music/dashboard.html', sessions=None, requires_login=True)
@@ -1008,6 +1008,50 @@ def create_app(test_config=None):
             return jsonify({'message': 'Game statistics saved successfully'})
         except Exception as e:
             db.session.rollback()
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/journal/summary')
+    @login_required
+    def journal_summary():
+        try:
+            # Get user's journal entries
+            entries = JournalEntry.query.filter_by(user_id=current_user.id).order_by(JournalEntry.date_created.desc()).all()
+            
+            # Calculate total entries
+            total_entries = len(entries)
+            
+            # Calculate average mood score
+            mood_scores = [entry.mood_score for entry in entries if entry.mood_score is not None]
+            average_mood = sum(mood_scores) / len(mood_scores) if mood_scores else None
+            
+            # Get recent insights (last 3 entries)
+            recent_insights = []
+            for entry in entries[:3]:
+                if entry.sentiment_label:
+                    insight = f"Your recent entry shows {entry.sentiment_label} sentiment"
+                    if entry.mood_score:
+                        mood_map = {1: "very low", 2: "low", 3: "neutral", 4: "high", 5: "very high"}
+                        insight += f" with {mood_map[entry.mood_score]} mood"
+                    recent_insights.append(insight)
+            
+            # Extract common keywords from recent entries
+            keywords = set()
+            for entry in entries[:5]:  # Look at last 5 entries
+                content = entry.content.lower()
+                # Simple keyword extraction (can be enhanced with NLP)
+                words = content.split()
+                for word in words:
+                    if len(word) > 4 and word.isalpha():  # Basic filtering
+                        keywords.add(word)
+            
+            return jsonify({
+                'total_entries': total_entries,
+                'average_mood': average_mood,
+                'recent_insights': recent_insights,
+                'keywords': list(keywords)[:10]  # Limit to 10 keywords
+            })
+            
+        except Exception as e:
             return jsonify({'error': str(e)}), 500
 
     # Initialize the database

@@ -80,13 +80,12 @@ def send_message():
         try:
             chat_entry = ChatHistory(
                 user_id=current_user.id,
-                user_message=message,
-                ai_response=response,
-                sentiment=sentiment_label,
-                emotions=json.dumps(emotions) if isinstance(emotions, dict) else emotions,
+                message=message,
+                response=response,
+                sentiment_score=sentiment_score,
+                sentiment_label=sentiment_label,
                 timestamp=datetime.utcnow()
             )
-            
             db.session.add(chat_entry)
             db.session.commit()
             logger.info(f"Chat entry saved successfully for user {current_user.id}")
@@ -96,7 +95,7 @@ def send_message():
         
         return jsonify({
             'response': response,
-            'sentiment': sentiment_label,
+            'sentiment_label': sentiment_label,
             'emotions': emotions
         })
     

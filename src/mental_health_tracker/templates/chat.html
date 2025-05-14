@@ -1,72 +1,340 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">AI Mental Health Assistant</h4>
+<div class="chat-page">
+    <div class="main-content">
+        <div class="chat-section">
+            <div class="messages-container" id="chat-messages">
+                <div class="message bot">
+                    Hello! How are you feeling today? I'm here to chat and help track your mental wellbeing.
                 </div>
-                <div class="card-body">
-                    <div id="chat-messages" class="chat-messages mb-3" style="height: 400px; overflow-y: auto;">
-                        <!-- Messages will be added here -->
-                    </div>
+                <!-- Messages will be added here dynamically -->
+            </div>
+            
+            <div class="input-container">
+                <form id="chat-form">
+                    {% if csrf_token is defined %}
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    {% endif %}
+                    <input type="text" id="message-input" placeholder="How are you feeling today?" class="message-input">
+                    <button type="submit" class="send-button">Send</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="analysis-section">
+            <h2 class="section-title">Mood Trends</h2>
+            <div class="chart-container">
+                <svg class="chart" viewBox="0 0 500 280">
+                    <!-- Chart grid -->
+                    <line class="chart-grid" x1="50" y1="250" x2="470" y2="250"></line>
+                    <line class="chart-grid" x1="50" y1="200" x2="470" y2="200"></line>
+                    <line class="chart-grid" x1="50" y1="150" x2="470" y2="150"></line>
+                    <line class="chart-grid" x1="50" y1="100" x2="470" y2="100"></line>
+                    <line class="chart-grid" x1="50" y1="50" x2="470" y2="50"></line>
                     
-                    <div class="chat-input">
-                        <form id="chat-form" class="d-flex">
-                            <input type="text" id="message-input" class="form-control me-2" placeholder="Type your message...">
-                            <button type="submit" class="btn btn-primary">Send</button>
-                        </form>
-                    </div>
-                </div>
+                    <!-- Y axis -->
+                    <line stroke="#666" x1="50" y1="30" x2="50" y2="250"></line>
+                    <text class="chart-axis" x="30" y="250" text-anchor="middle">-1.0</text>
+                    <text class="chart-axis" x="30" y="200" text-anchor="middle">-0.5</text>
+                    <text class="chart-axis" x="30" y="150" text-anchor="middle">0.0</text>
+                    <text class="chart-axis" x="30" y="100" text-anchor="middle">0.5</text>
+                    <text class="chart-axis" x="30" y="50" text-anchor="middle">1.0</text>
+                    
+                    <!-- X axis -->
+                    <line stroke="#666" x1="50" y1="250" x2="470" y2="250"></line>
+                    <text class="chart-axis" x="90" y="270" text-anchor="middle">04/16</text>
+                    <text class="chart-axis" x="170" y="270" text-anchor="middle">04/17</text>
+                    <text class="chart-axis" x="250" y="270" text-anchor="middle">04/18</text>
+                    <text class="chart-axis" x="330" y="270" text-anchor="middle">04/19</text>
+                    <text class="chart-axis" x="410" y="270" text-anchor="middle">04/20</text>
+                    
+                    <!-- Data points and line -->
+                    <path class="chart-line" d="M90,140 L170,120 L250,80 L330,110 L410,85"></path>
+                    <path class="chart-area" d="M90,140 L170,120 L250,80 L330,110 L410,85 L410,250 L90,250 Z"></path>
+                    
+                    <circle class="chart-dot" cx="90" cy="140" r="4"></circle>
+                    <circle class="chart-dot" cx="170" cy="120" r="4"></circle>
+                    <circle class="chart-dot" cx="250" cy="80" r="4"></circle>
+                    <circle class="chart-dot" cx="330" cy="110" r="4"></circle>
+                    <circle class="chart-dot" cx="410" cy="85" r="4"></circle>
+                </svg>
+            </div>
+            
+            <div class="mood-summary">
+                <h3 class="summary-title">Mood Summary</h3>
+                <p>Your recent interactions show: <span class="mood-label mood-positive">Generally positive mood</span></p>
+                <p>Last 7 days: Your mood appears to be improving overall, with some minor fluctuations.</p>
+                <p>Most positive day: April 18th</p>
+                <p>Potential triggers noticed:</p>
+                <ul>
+                    <li>Work accomplishments (positive impact)</li>
+                    <li>Sleep concerns (negative impact)</li>
+                </ul>
             </div>
         </div>
     </div>
 </div>
 
 <style>
-.chat-messages {
-    padding: 15px;
-    background-color: #f8f9fa;
-    border-radius: 5px;
-}
-
-.message {
-    margin-bottom: 15px;
-    padding: 10px;
-    border-radius: 5px;
-    max-width: 80%;
-}
-
-.user-message {
-    background-color: #007bff;
-    color: white;
-    margin-left: auto;
-}
-
-.bot-message {
-    background-color: #e9ecef;
-    color: #212529;
-}
-
-.sentiment-indicator {
-    font-size: 0.8em;
-    margin-top: 5px;
-    opacity: 0.7;
-}
-
-.positive {
-    color: #28a745;
-}
-
-.negative {
-    color: #dc3545;
-}
-
-.neutral {
-    color: #6c757d;
-}
+    /* Dark nature theme styling */
+    .chat-page {
+        background-color: #121212;
+        color: #e0e0e0;
+        min-height: 100vh;
+        padding: 20px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .section-title, .summary-title {
+        color: #e0e0e0;
+        font-weight: 500;
+        margin-bottom: 15px;
+    }
+    
+    .main-content {
+        display: flex;
+        gap: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .chat-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        height: 70vh;
+        border-radius: 10px;
+        overflow: hidden;
+        background-color: #1e1e1e;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        border: 1px solid #333;
+    }
+    
+    .messages-container {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        background-color: #1e1e1e;
+    }
+    
+    .message {
+        padding: 12px 15px;
+        border-radius: 18px;
+        margin-bottom: 15px;
+        max-width: 75%;
+        word-wrap: break-word;
+        animation: fadeIn 0.3s;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .message.user {
+        background-color: rgba(92, 107, 192, 0.2);
+        margin-left: auto;
+        border-radius: 18px 18px 0 18px;
+        color: #e0e0e0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(10px);
+    }
+    
+    .message.bot {
+        background-color: #2d2d2d;
+        margin-right: auto;
+        border-radius: 18px 18px 18px 0;
+        color: #e0e0e0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    .message.bot.positive {
+        border-left: 4px solid #4CAF50;
+    }
+    
+    .message.bot.negative {
+        border-left: 4px solid #F44336;
+    }
+    
+    .message.bot.neutral {
+        border-left: 4px solid #9E9E9E;
+    }
+    
+    .input-container {
+        padding: 15px;
+        background-color: #252525;
+        border-top: 1px solid #333;
+    }
+    
+    .input-container form {
+        display: flex;
+        width: 100%;
+    }
+    
+    .message-input {
+        flex: 1;
+        padding: 14px;
+        border: none;
+        border-radius: 24px;
+        outline: none;
+        font-size: 16px;
+        background-color: #2d2d2d;
+        color: #e0e0e0;
+        box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+    }
+    
+    .message-input::placeholder {
+        color: #999;
+    }
+    
+    .send-button {
+        margin-left: 10px;
+        padding: 0 24px;
+        background-color: #5570f7;
+        color: white;
+        border: none;
+        border-radius: 24px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: all 0.2s ease;
+    }
+    
+    .send-button:hover {
+        background-color: #4a60ce;
+        transform: translateY(-2px);
+    }
+    
+    .analysis-section {
+        width: 40%;
+        padding: 20px;
+        border-radius: 10px;
+        background-color: #1e1e1e;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        border: 1px solid #333;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .chart-container {
+        height: 300px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        padding: 15px;
+        background-color: #252525;
+        position: relative;
+        border: 1px solid #333;
+    }
+    
+    .mood-summary {
+        padding: 15px;
+        background-color: rgba(135, 126, 217, 0.1);
+        border-radius: 8px;
+        border: 1px solid #333;
+    }
+    
+    .mood-summary ul {
+        padding-left: 20px;
+    }
+    
+    .mood-summary li {
+        margin-bottom: 5px;
+    }
+    
+    .mood-label {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+        margin-top: 5px;
+        font-weight: 500;
+    }
+    
+    .mood-positive {
+        background-color: rgba(76, 175, 80, 0.2);
+        color: #81c784;
+    }
+    
+    .mood-negative {
+        background-color: rgba(244, 67, 54, 0.2);
+        color: #e57373;
+    }
+    
+    .mood-neutral {
+        background-color: rgba(158, 158, 158, 0.2);
+        color: #bdbdbd;
+    }
+    
+    @media (max-width: 768px) {
+        .main-content {
+            flex-direction: column;
+        }
+        
+        .analysis-section {
+            width: auto;
+            margin-top: 20px;
+        }
+    }
+    
+    /* Chart styling for dark theme */
+    .chart {
+        width: 100%;
+        height: 100%;
+    }
+    
+    .chart-line {
+        stroke: #877ed9;
+        stroke-width: 2;
+        fill: none;
+    }
+    
+    .chart-area {
+        fill: rgba(135, 126, 217, 0.1);
+    }
+    
+    .chart-dot {
+        fill: #877ed9;
+        stroke: #252525;
+        stroke-width: 1;
+    }
+    
+    .chart-axis {
+        font-size: 12px;
+        fill: #aaa;
+    }
+    
+    .chart-grid {
+        stroke: #333;
+        stroke-dasharray: 3, 3;
+    }
+    
+    /* Nature-inspired elements */
+    .chat-page::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%234CAF50' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E");
+        opacity: 0.5;
+        z-index: -1;
+    }
+    
+    .chat-section::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 200px;
+        height: 200px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%234CAF50' opacity='0.05' d='M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L6.66,19.7C7.14,19.87 7.64,20 8,20C19,20 22,3 22,3C21,5 14,5.25 9,6.25C4,7.25 2,11.5 2,13.5C2,15.5 3.75,17.25 3.75,17.25C7,8 17,8 17,8Z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        opacity: 0.5;
+        z-index: 0;
+        pointer-events: none;
+    }
 </style>
 
 <script>
@@ -74,20 +342,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const chatForm = document.getElementById('chat-form');
     const messageInput = document.getElementById('message-input');
     const chatMessages = document.getElementById('chat-messages');
+    const csrfInput = document.querySelector('input[name="csrf_token"]');
+    const csrfToken = csrfInput ? csrfInput.value : '';
 
-    function addMessage(message, isUser = false) {
+    function addMessage(message, isUser = false, sentiment = null) {
         const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+        messageDiv.className = isUser ? 'message user' : 'message bot';
+        
+        if (!isUser && sentiment) {
+            messageDiv.classList.add(sentiment.toLowerCase());
+        }
+        
         messageDiv.textContent = message;
         chatMessages.appendChild(messageDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-
-    function addSentimentIndicator(sentiment) {
-        const indicator = document.createElement('div');
-        indicator.className = `sentiment-indicator ${sentiment}`;
-        indicator.textContent = `Sentiment: ${sentiment.charAt(0).toUpperCase() + sentiment.slice(1)}`;
-        chatMessages.appendChild(indicator);
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
@@ -97,31 +364,33 @@ document.addEventListener('DOMContentLoaded', function() {
         const message = messageInput.value.trim();
         if (!message) return;
 
-        // Add user message to chat
         addMessage(message, true);
         messageInput.value = '';
 
         try {
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            if (csrfToken) {
+                headers['X-CSRFToken'] = csrfToken;
+            }
             const response = await fetch('/api/chat', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: headers,
                 body: JSON.stringify({ message: message })
             });
 
             const data = await response.json();
             
             if (response.ok) {
-                // Add bot response to chat
-                addMessage(data.response);
-                addSentimentIndicator(data.sentiment_label);
+                addMessage(data.response, false, data.sentiment_label);
             } else {
-                addMessage('Sorry, I encountered an error. Please try again.');
+                console.error('Error response:', data);
+                addMessage(data.error || 'Sorry, I encountered an error. Please try again.', false, 'neutral');
             }
         } catch (error) {
             console.error('Error:', error);
-            addMessage('Sorry, I encountered an error. Please try again.');
+            addMessage('Sorry, I encountered an error. Please try again.', false, 'neutral');
         }
     });
 });

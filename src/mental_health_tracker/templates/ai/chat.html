@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}AI Chat - MindWell{% endblock %}
+{% block title %}AI Chat | Mental Health Tracker{% endblock %}
 
 {# Define template macros #}
 {% macro get_sentiment_icon(sentiment) -%}
@@ -34,118 +34,59 @@
 {%- endmacro %}
 
 {% block content %}
-<div class="chat-container">
-    <!-- Chat Header -->
-    <div class="chat-header">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-lg-8 offset-lg-2 text-center">
-                    <h1 class="chat-title">AI Mental Health Assistant</h1>
-                    <p class="chat-subtitle">Your supportive companion for mental wellness</p>
-                    <div class="d-flex justify-content-center gap-3">
-                        <div class="nature-badge">
-                            <i class="fas fa-robot pulse-icon"></i>
-                            <span>AI Support</span>
-                        </div>
-                        <a href="{{ url_for('ai_chat.new_chat') }}" class="new-chat-btn">
-                            <i class="fas fa-leaf"></i>
-                            <span>New Chat</span>
-                        </a>
-                    </div>
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0">AI Chat Assistant</h2>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Chat Interface -->
-    <div class="container mt-4">
-        <div class="row">
-            <div class="col-lg-8 offset-lg-2">
-                <!-- Messages Container -->
-                <div class="glass-card chat-messages" id="chat-messages">
-                    <div class="card-glow"></div>
-                    {% if messages %}
-                        {% for message in messages %}
-                            <!-- User Message -->
-                            <div class="message message-user">
-                                <div class="message-content">
-                                    <div class="message-header">
-                                        <span class="message-role">
-                                            <i class="fas fa-user"></i>
-                                            You
-                                        </span>
-                                        <span class="message-time">{{ message.timestamp.strftime('%I:%M %p') }}</span>
-                                    </div>
-                                    <div class="message-text">{{ message.user_message }}</div>
-                                </div>
-                            </div>
-                            
-                            <!-- AI Response -->
-                            <div class="message message-ai">
-                                <div class="message-content">
-                                    <div class="message-header">
-                                        <span class="message-role">
-                                            <i class="fas fa-robot"></i>
-                                            AI
-                                        </span>
-                                        <span class="message-time">{{ message.timestamp.strftime('%I:%M %p') }}</span>
-                                    </div>
-                                    <div class="message-text">{{ message.ai_response }}</div>
-                                    {% if message.sentiment %}
-                                        <div class="message-sentiment">
-                                            <div class="sentiment-badge {{ message.sentiment.lower() }}">
-                                                <i class="fas {{ get_sentiment_icon(message.sentiment) }}"></i>
-                                                Sentiment: {{ message.sentiment }}
-                                            </div>
-                                            {% if message.emotions %}
-                                                <div class="emotions-list">
-                                                    {% set emotions = message.emotions if message.emotions is mapping else message.emotions|from_json %}
-                                                    {% for emotion, score in emotions.items() %}
-                                                        <span class="emotion-badge">
-                                                            <i class="fas {{ get_emotion_icon(emotion) }}"></i>
-                                                            {{ emotion }}: {{ (score * 100) | round }}%
-                                                        </span>
-                                                    {% endfor %}
+                <div class="card-body">
+                    <div class="chat-container mb-4" style="height: 400px; overflow-y: auto;">
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="message {% if message.is_user %}user-message{% else %}assistant-message{% endif %} mb-3">
+                                    <div class="message-content p-3 rounded">
+                                        <strong>{% if message.is_user %}User{% else %}Assistant{% endif %}:</strong> {{ message.message|safe }}
+                                        {% if not message.is_user and message.sentiment_label %}
+                                            <div class="message-sentiment">
+                                                <div class="sentiment-badge {{ message.sentiment_label|lower }}">
+                                                    <i class="fas {{ get_sentiment_icon(message.sentiment_label) }}"></i>
+                                                    {{ message.sentiment_label }}
                                                 </div>
-                                            {% endif %}
-                                        </div>
-                                    {% endif %}
+                                                {% if message.emotions %}
+                                                    <div class="emotions-list">
+                                                        {% for emotion, score in message.emotions.items() %}
+                                                            <div class="emotion-badge">
+                                                                <i class="fas {{ get_emotion_icon(emotion) }}"></i>
+                                                                {{ emotion }}
+                                                            </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
                                 </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center text-muted">
+                                <p>Welcome to the AI Chat Assistant. How can I help you today?</p>
                             </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="empty-chat text-center py-5">
-                            <div class="empty-icon mb-3">
-                                <i class="fas fa-comments fa-3x"></i>
-                            </div>
-                            <h4>Start a Conversation</h4>
-                            <p class="text-muted">Share your thoughts or ask for support</p>
-                        </div>
-                    {% endif %}
-                </div>
-
-                <!-- Message Input -->
-                <div class="glass-card chat-input-container mt-4">
-                    <div class="card-glow"></div>
-                    <form id="chat-form" class="chat-form">
-                        {% if csrf_token %}
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         {% endif %}
-                        <div class="message-input-wrapper">
-                            <textarea 
-                                name="message" 
-                                id="message-input" 
-                                class="form-control message-input" 
-                                placeholder="Type your message here..."
-                                rows="1"
-                                required
-                            ></textarea>
-                            <button type="submit" class="btn btn-primary send-button">
-                                <i class="fas fa-paper-plane"></i>
-                                <span class="d-none d-md-inline ms-2">Send</span>
-                            </button>
+                    </div>
+                    
+                    <form id="chat-form" action="/api/chat" method="post">
+                        <div class="input-group">
+                            <input type="text" id="user-message" name="message" class="form-control" placeholder="Type your message here..." required>
+                            <div class="input-group-append">
+                                <button type="submit" class="btn btn-primary">Send</button>
+                            </div>
                         </div>
                     </form>
+                </div>
+                <div class="card-footer">
+                    <button id="new-chat" class="btn btn-outline-secondary btn-sm">Start New Chat</button>
                 </div>
             </div>
         </div>
@@ -229,9 +170,14 @@
     border: 1px solid rgba(76, 175, 80, 0.15);
 }
 
-.message-user .message-content {
-    background: rgba(76, 175, 80, 0.05);
-    border: 1px solid rgba(76, 175, 80, 0.2);
+.user-message .message-content {
+    background-color: #e3f2fd;
+    margin-left: 20%;
+}
+
+.assistant-message .message-content {
+    background-color: #f5f5f5;
+    margin-right: 20%;
 }
 
 .message-header {
@@ -591,180 +537,146 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const messagesContainer = document.getElementById('chat-messages');
-    const messageInput = document.getElementById('message-input');
     const chatForm = document.getElementById('chat-form');
+    const newChatBtn = document.getElementById('new-chat');
+    const chatContainer = document.querySelector('.chat-container');
     
-    // Auto-scroll to bottom of messages
-    function scrollToBottom() {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    // Function to add a message to the chat
+    function addMessage(content, isUser, sentiment = null, emotions = null) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isUser ? 'user-message' : 'assistant-message'} mb-3`;
+        
+        const messageContent = document.createElement('div');
+        messageContent.className = 'message-content p-3 rounded';
+        
+        const role = document.createElement('strong');
+        role.textContent = isUser ? 'User: ' : 'Assistant: ';
+        messageContent.appendChild(role);
+        
+        const text = document.createTextNode(content);
+        messageContent.appendChild(text);
+        
+        if (!isUser && sentiment) {
+            const sentimentDiv = document.createElement('div');
+            sentimentDiv.className = 'message-sentiment';
+            
+            const sentimentBadge = document.createElement('div');
+            sentimentBadge.className = `sentiment-badge ${sentiment.toLowerCase()}`;
+            
+            const sentimentIcon = document.createElement('i');
+            sentimentIcon.className = `fas ${getSentimentIcon(sentiment)}`;
+            sentimentBadge.appendChild(sentimentIcon);
+            
+            const sentimentText = document.createTextNode(sentiment);
+            sentimentBadge.appendChild(sentimentText);
+            
+            sentimentDiv.appendChild(sentimentBadge);
+            
+            if (emotions) {
+                const emotionsList = document.createElement('div');
+                emotionsList.className = 'emotions-list';
+                
+                Object.entries(emotions).forEach(([emotion, score]) => {
+                    const emotionBadge = document.createElement('div');
+                    emotionBadge.className = 'emotion-badge';
+                    
+                    const emotionIcon = document.createElement('i');
+                    emotionIcon.className = `fas ${getEmotionIcon(emotion)}`;
+                    emotionBadge.appendChild(emotionIcon);
+                    
+                    const emotionText = document.createTextNode(emotion);
+                    emotionBadge.appendChild(emotionText);
+                    
+                    emotionsList.appendChild(emotionBadge);
+                });
+                
+                sentimentDiv.appendChild(emotionsList);
+            }
+            
+            messageContent.appendChild(sentimentDiv);
+        }
+        
+        messageDiv.appendChild(messageContent);
+        chatContainer.appendChild(messageDiv);
+        
+        // Scroll to bottom
+        chatContainer.scrollTop = chatContainer.scrollHeight;
     }
-    scrollToBottom();
-    
-    // Auto-resize textarea
-    function adjustTextareaHeight() {
-        messageInput.style.height = 'auto';
-        messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
-    }
-    
-    messageInput.addEventListener('input', adjustTextareaHeight);
-    adjustTextareaHeight();
     
     // Helper functions for icons
     function getSentimentIcon(sentiment) {
-        const icons = {
-            'POSITIVE': 'fa-smile',
-            'NEGATIVE': 'fa-frown',
-            'NEUTRAL': 'fa-meh',
-            'MIXED': 'fa-balance-scale'
-        };
-        return icons[sentiment.toUpperCase()] || 'fa-comment';
-    }
-
-    function getEmotionIcon(emotion) {
-        const icons = {
-            'joy': 'fa-laugh',
-            'sadness': 'fa-sad-tear',
-            'anger': 'fa-angry',
-            'fear': 'fa-scared',
-            'surprise': 'fa-surprise',
-            'love': 'fa-heart',
-            'neutral': 'fa-meh'
-        };
-        return icons[emotion.toLowerCase()] || 'fa-circle';
+        switch(sentiment) {
+            case 'POSITIVE': return 'fa-smile';
+            case 'NEGATIVE': return 'fa-frown';
+            case 'NEUTRAL': return 'fa-meh';
+            default: return 'fa-comment';
+        }
     }
     
-    // Add new message to chat
-    function addMessageToChat(userMessage, aiResponse, sentiment, emotions) {
-        const timestamp = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        
-        // Add user message
-        const userMessageHtml = `
-            <div class="message message-user">
-                <div class="message-content">
-                    <div class="message-header">
-                        <span class="message-role">
-                            <i class="fas fa-user"></i>
-                            You
-                        </span>
-                        <span class="message-time">${timestamp}</span>
-                    </div>
-                    <div class="message-text">${userMessage}</div>
-                </div>
-            </div>
-        `;
-        
-        // Add AI response
-        const aiMessageHtml = `
-            <div class="message message-ai">
-                <div class="message-content">
-                    <div class="message-header">
-                        <span class="message-role">
-                            <i class="fas fa-robot"></i>
-                            AI
-                        </span>
-                        <span class="message-time">${timestamp}</span>
-                    </div>
-                    <div class="message-text">${aiResponse}</div>
-                    ${sentiment ? `
-                    <div class="message-sentiment">
-                        <div class="sentiment-badge ${sentiment.toLowerCase()}">
-                            <i class="fas ${getSentimentIcon(sentiment)}"></i>
-                            Sentiment: ${sentiment}
-                        </div>
-                        ${emotions ? `
-                        <div class="emotions-list">
-                            ${Object.entries(emotions).map(([emotion, score]) => `
-                                <span class="emotion-badge">
-                                    <i class="fas ${getEmotionIcon(emotion)}"></i>
-                                    ${emotion}: ${Math.round(score * 100)}%
-                                </span>
-                            `).join('')}
-                        </div>
-                        ` : ''}
-                    </div>
-                    ` : ''}
-                </div>
-            </div>
-        `;
-        
-        // Remove empty state if present
-        const emptyState = document.querySelector('.empty-chat');
-        if (emptyState) {
-            emptyState.remove();
+    function getEmotionIcon(emotion) {
+        switch(emotion) {
+            case 'joy': return 'fa-laugh';
+            case 'sadness': return 'fa-sad-tear';
+            case 'anger': return 'fa-angry';
+            case 'fear': return 'fa-scared';
+            case 'surprise': return 'fa-surprise';
+            case 'love': return 'fa-heart';
+            default: return 'fa-circle';
         }
-        
-        // Add messages to chat
-        messagesContainer.insertAdjacentHTML('beforeend', userMessageHtml);
-        messagesContainer.insertAdjacentHTML('beforeend', aiMessageHtml);
-        
-        // Scroll to bottom
-        scrollToBottom();
     }
     
     // Handle form submission
-    chatForm.addEventListener('submit', function(e) {
+    chatForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         
-        const submitButton = this.querySelector('button[type="submit"]');
+        const messageInput = document.getElementById('user-message');
         const message = messageInput.value.trim();
         
-        if (!message) return;
-        
-        // Show loading state
-        submitButton.disabled = true;
-        messageInput.disabled = true;
-        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        
-        // Get CSRF token - if available
-        const csrfTokenElement = document.querySelector('input[name="csrf_token"]');
-        const headers = {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        };
-        
-        // Add CSRF token header if available
-        if (csrfTokenElement) {
-            headers['X-CSRFToken'] = csrfTokenElement.value;
-        }
-        
-        // Send request
-        fetch('{{ url_for("ai_chat.send_message") }}', {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify({
-                message: message
-            })
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.error) {
-                throw new Error(data.error);
-            }
+        if (message) {
+            // Disable form during submission
+            const submitBtn = chatForm.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
             
-            // Add messages to chat using the new function
-            addMessageToChat(message, data.response, data.sentiment, data.emotions);
-            
-            // Reset form
+            // Add user message immediately
+            addMessage(message, true);
             messageInput.value = '';
-            adjustTextareaHeight();
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert(error.message || 'Failed to send message. Please try again.');
-        })
-        .finally(() => {
-            // Reset button state
-            submitButton.disabled = false;
-            messageInput.disabled = false;
-            submitButton.innerHTML = '<i class="fas fa-paper-plane"></i><span class="d-none d-md-inline ms-2">Send</span>';
-        });
+            
+            try {
+                // Send message to server
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.response) {
+                    // Add AI response with sentiment and emotions
+                    addMessage(data.response, false, data.sentiment_label, data.emotions);
+                } else {
+                    throw new Error(data.error || 'Failed to get response');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                addMessage('I apologize, but I encountered an error. Please try again.', false, 'neutral');
+            } finally {
+                submitBtn.disabled = false;
+            }
+        }
     });
+    
+    // Handle new chat button
+    newChatBtn.addEventListener('click', function() {
+        if (confirm('Are you sure you want to start a new chat? This will clear your current conversation.')) {
+            window.location.href = '/new_chat';
+        }
+    });
+    
+    // Scroll to bottom on load
+    chatContainer.scrollTop = chatContainer.scrollHeight;
 });
 </script>
 {% endblock %} 

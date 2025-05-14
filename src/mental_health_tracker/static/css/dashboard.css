@@ -257,10 +257,28 @@
 
 /* Chart and Stats */
 .mood-chart {
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.5);
-    border-radius: 15px;
-    margin: 20px 0;
+    height: 250px;
+    margin-bottom: 20px;
+    background-color: #ffffff;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.mood-journey-chart {
+    background-color: #ffffff !important;
+}
+
+/* Make sure all chart texts are visible */
+.mood-journey-card, .glass-card {
+    background-color: #ffffff !important;
+}
+
+.mood-journey-card h3, .glass-card h3 {
+    color: #333333 !important;
+}
+
+.mood-journey-card p, .glass-card p {
+    color: #666666 !important;
 }
 
 .insight-item {

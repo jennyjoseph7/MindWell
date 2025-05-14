@@ -1,5 +1,27 @@
 // Music Therapy JavaScript Implementation
 
+// Map moods to static audio files
+const moodAudioFiles = {
+  calm: [
+    '/static/audio/calm/calm1.mp3', '/static/audio/calm/calm2.mp3', '/static/audio/calm/calm3.mp3', '/static/audio/calm/calm4.mp3', '/static/audio/calm/calm5.mp3', '/static/audio/calm/calm6.mp3', '/static/audio/calm/calm7.mp3'
+  ],
+  happy: [
+    '/static/audio/happy/happy1.mp3', '/static/audio/happy/happy2.mp3', '/static/audio/happy/happy3.mp3', '/static/audio/happy/happy4.mp3', '/static/audio/happy/happy5.mp3', '/static/audio/happy/happy6.mp3'
+  ],
+  sad: [
+    '/static/audio/sad/sad1.mp3', '/static/audio/sad/sad2.mp3', '/static/audio/sad/sad3.mp3', '/static/audio/sad/sad4.mp3', '/static/audio/sad/sad5.mp3', '/static/audio/sad/sad6.mp3'
+  ],
+  focus: [
+    '/static/audio/focus/focus1.mp3', '/static/audio/focus/focus2.mp3', '/static/audio/focus/focus3.mp3', '/static/audio/focus/focus4.mp3', '/static/audio/focus/focus5.mp3', '/static/audio/focus/focus6.mp3', '/static/audio/focus/focus7.mp3', '/static/audio/focus/focus8.mp3'
+  ],
+  energetic: [
+    '/static/audio/energetic/energetic1.mp3', '/static/audio/energetic/energetic2.mp3', '/static/audio/energetic/energetic3.mp3', '/static/audio/energetic/energetic4.mp3', '/static/audio/energetic/energetic5.mp3', '/static/audio/energetic/energetic6.mp3', '/static/audio/energetic/energetic7.mp3', '/static/audio/energetic/energetic8.mp3'
+  ],
+  sleep: [
+    '/static/audio/sleep/sleep1.mp3', '/static/audio/sleep/sleep2.mp3', '/static/audio/sleep/sleep3.mp3', '/static/audio/sleep/sleep4.mp3', '/static/audio/sleep/sleep5.mp3', '/static/audio/sleep/sleep6.mp3', '/static/audio/sleep/sleep7.mp3', '/static/audio/sleep/sleep8.mp3', '/static/audio/sleep/sleep9.mp3'
+  ]
+};
+
 class MusicPlayer {
     constructor() {
         this.audio = new Audio();
@@ -11,75 +33,26 @@ class MusicPlayer {
         this.isRepeat = false;
         this.isShuffle = false;
         this.currentMood = null;
+        this.sessionId = null;
+        this.sessionStartTime = null;
+        this.tracksPlayed = [];
         
-        // Initialize playlists
-        this.playlists = {
-            calm: [
-                {
-                    id: 'calm1',
-                    title: 'Ocean Waves',
-                    artist: 'Nature Sounds',
-                    src: '/static/music/calm/ocean-waves.mp3',
-                    duration: 300
-                },
-                {
-                    id: 'calm2',
-                    title: 'Gentle Rain',
-                    artist: 'Nature Sounds',
-                    src: '/static/music/calm/gentle-rain.mp3',
-                    duration: 300
-                }
-            ],
-            happy: [
-                {
-                    id: 'happy1',
-                    title: 'Sunny Day',
-                    artist: 'Upbeat Tunes',
-                    src: '/static/music/happy/sunny-day.mp3',
-                    duration: 180
-                }
-            ],
-            sad: [
-                {
-                    id: 'sad1',
-                    title: 'Melancholy Melody',
-                    artist: 'Emotional Tunes',
-                    src: '/static/music/sad/melancholy.mp3',
-                    duration: 240
-                }
-            ],
-            focus: [
-                {
-                    id: 'focus1',
-                    title: 'Deep Focus',
-                    artist: 'Study Music',
-                    src: '/static/music/focus/deep-focus.mp3',
-                    duration: 300
-                }
-            ],
-            energetic: [
-                {
-                    id: 'energetic1',
-                    title: 'Energy Boost',
-                    artist: 'Workout Mix',
-                    src: '/static/music/energetic/energy-boost.mp3',
-                    duration: 180
-                }
-            ],
-            sleep: [
-                {
-                    id: 'sleep1',
-                    title: 'Sleepy Lullaby',
-                    artist: 'Sleep Sounds',
-                    src: '/static/music/sleep/lullaby.mp3',
-                    duration: 600
-                }
-            ]
-        };
+        // Initialize playlists - these are only fallbacks if API fails
+        // Actual playlists will be loaded from the server
+        this.playlists = {};
 
         this.initializeElements();
         this.bindEvents();
         this.setupAudioEvents();
+        
+        // Set initial volume
+        this.audio.volume = 0.8;
+        
+        // Handle recommended mood if provided
+        const recommendedMood = document.getElementById('recommended-mood');
+        if (recommendedMood && recommendedMood.value) {
+            this.changeMood(recommendedMood.value);
+        }
     }
 
     initializeElements() {
@@ -176,14 +149,48 @@ class MusicPlayer {
         this.audio.addEventListener('loadedmetadata', () => this.updateTotalTime());
         this.audio.addEventListener('ended', () => this.handleTrackEnd());
         this.audio.addEventListener('error', (e) => this.handleAudioError(e));
+        
+        // Add play event to track played tracks
+        this.audio.addEventListener('play', () => {
+            if (this.currentTrack && !this.tracksPlayed.some(t => t.id === this.currentTrack.id)) {
+                this.tracksPlayed.push({
+                    id: this.currentTrack.id,
+                    title: this.currentTrack.title,
+                    artist: this.currentTrack.artist,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        });
     }
 
     loadTrack(track) {
+        if (!track) return;
+        
         this.currentTrack = track;
-        this.audio.src = track.src;
+        let filePath = track.file;
+        if (!filePath.startsWith('/')) filePath = '/' + filePath;
+        this.audio.src = filePath;
         this.audio.load();
+
         this.updateTrackInfo();
         this.highlightCurrentTrack();
+        this.progressBar.style.width = '0%';
+        document.title = `${track.title} - Music Therapy`;
+
+        // Update total time and playlist duration when metadata is loaded
+        this.audio.onloadedmetadata = () => {
+            if (this.totalTimeDisplay && !isNaN(this.audio.duration)) {
+                this.totalTimeDisplay.textContent = this.formatTime(this.audio.duration);
+            }
+            // Also update the duration in the playlist UI for the current track
+            const trackItems = document.querySelectorAll('.track-item');
+            if (trackItems && trackItems.length > this.currentIndex) {
+                const durationElem = trackItems[this.currentIndex].querySelector('.track-duration');
+                if (durationElem) {
+                    durationElem.textContent = this.formatTime(this.audio.duration);
+                }
+            }
+        };
     }
 
     togglePlay() {
@@ -191,8 +198,31 @@ class MusicPlayer {
             this.audio.pause();
             this.playButton.innerHTML = '<i class="fas fa-play"></i>';
         } else {
-            this.audio.play();
-            this.playButton.innerHTML = '<i class="fas fa-pause"></i>';
+            // If we have a track, play it
+            if (this.currentTrack) {
+                const playPromise = this.audio.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.then(_ => {
+                        // Playback started successfully
+                        this.playButton.innerHTML = '<i class="fas fa-pause"></i>';
+                    })
+                    .catch(error => {
+                        // Auto-play was prevented
+                        this.showNotification("Playback blocked by browser. Please interact with the page first.", "warning");
+                        this.isPlaying = false;
+                    });
+                }
+            } else if (this.playlist.length > 0) {
+                // If no track is loaded but we have a playlist, load the first track
+                this.loadTrack(this.playlist[0]);
+                this.togglePlay();
+                return;
+            } else {
+                // No track and no playlist, show notification
+                this.showNotification("Please select a mood first to load tracks", "info");
+                return;
+            }
         }
         this.isPlaying = !this.isPlaying;
     }
@@ -201,9 +231,15 @@ class MusicPlayer {
         if (this.queue.length > 0) {
             const nextTrack = this.queue.shift();
             this.loadTrack(nextTrack);
+            this.updateQueueDisplay();
             if (this.isPlaying) this.audio.play();
         } else if (this.playlist.length > 0) {
-            this.currentIndex = (this.currentIndex + 1) % this.playlist.length;
+            if (this.isShuffle) {
+                const randomIndex = Math.floor(Math.random() * this.playlist.length);
+                this.currentIndex = randomIndex;
+            } else {
+                this.currentIndex = (this.currentIndex + 1) % this.playlist.length;
+            }
             this.loadTrack(this.playlist[this.currentIndex]);
             if (this.isPlaying) this.audio.play();
         }
@@ -211,8 +247,19 @@ class MusicPlayer {
 
     playPrevious() {
         if (this.playlist.length > 0) {
-            this.currentIndex = (this.currentIndex - 1 + this.playlist.length) % this.playlist.length;
-            this.loadTrack(this.playlist[this.currentIndex]);
+            if (this.audio.currentTime > 3) {
+                // If we're more than 3 seconds into the song, restart it
+                this.audio.currentTime = 0;
+            } else {
+                // Otherwise go to previous track
+                if (this.isShuffle) {
+                    const randomIndex = Math.floor(Math.random() * this.playlist.length);
+                    this.currentIndex = randomIndex;
+                } else {
+                    this.currentIndex = (this.currentIndex - 1 + this.playlist.length) % this.playlist.length;
+                }
+                this.loadTrack(this.playlist[this.currentIndex]);
+            }
             if (this.isPlaying) this.audio.play();
         }
     }
@@ -237,48 +284,70 @@ class MusicPlayer {
     }
 
     changeMood(mood) {
+        if (!mood) return;
         this.currentMood = mood;
-        this.currentIndex = 0;
-        this.playlist = this.playlists[mood];
-        
+        this.tracksPlayed = [];
+        this.sessionStartTime = new Date();
+
         // Update active state of mood buttons
         this.moodButtons.forEach(button => {
             button.classList.toggle('active', button.dataset.mood === mood);
         });
-        
-        // Load first track of the selected mood
-        if (this.playlist && this.playlist.length > 0) {
-            this.loadTrack(this.playlist[0]);
-        }
-        
-        // Update track list display
+
+        // Show loading state
+        this.trackList.innerHTML = '<p class="text-muted">Loading tracks...</p>';
+
+        // Build playlist from static files
+        const files = moodAudioFiles[mood] || [];
+        this.playlist = files.map((file, idx) => ({
+            id: `${mood}_${idx+1}`,
+            title: `${mood.charAt(0).toUpperCase() + mood.slice(1)} Track ${idx+1}`,
+            artist: mood.charAt(0).toUpperCase() + mood.slice(1),
+            file: file,
+            duration: '' // leave blank for now
+        }));
+        this.currentIndex = 0;
+
+        // Update track list
         this.updateTrackList();
+
+        // Load first track if playlist has tracks
+        if (this.playlist.length > 0) {
+            this.loadTrack(this.playlist[0]);
+            this.showNotification(`Loaded ${this.playlist.length} tracks for ${mood} mood`, 'success');
+        } else {
+            this.showNotification(`No tracks found for ${mood} mood`, 'warning');
+            this.trackList.innerHTML = '<p class="text-muted">No tracks available for this mood</p>';
+        }
     }
 
     updateProgress() {
-        const progress = (this.audio.currentTime / this.audio.duration) * 100;
-        this.progressBar.style.width = `${progress}%`;
-        this.currentTimeDisplay.textContent = this.formatTime(this.audio.currentTime);
+        if (this.audio.duration) {
+            const progressPercent = (this.audio.currentTime / this.audio.duration) * 100;
+            this.progressBar.style.width = progressPercent + '%';
+            
+            // Update current time display
+            if (this.currentTimeDisplay) {
+                this.currentTimeDisplay.textContent = this.formatTime(this.audio.currentTime);
+            }
+        }
     }
 
     updateTotalTime() {
-        this.totalTimeDisplay.textContent = this.formatTime(this.audio.duration);
+        if (this.totalTimeDisplay && !isNaN(this.audio.duration)) {
+            this.totalTimeDisplay.textContent = this.formatTime(this.audio.duration);
+        }
     }
 
     formatTime(seconds) {
-        const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = Math.floor(seconds % 60);
+        return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
     }
 
     handleTrackEnd() {
         if (this.isRepeat) {
-            this.audio.currentTime = 0;
             this.audio.play();
-        } else if (this.isShuffle) {
-            this.currentIndex = Math.floor(Math.random() * this.playlist.length);
-            this.loadTrack(this.playlist[this.currentIndex]);
-            if (this.isPlaying) this.audio.play();
         } else {
             this.playNext();
         }
@@ -286,144 +355,267 @@ class MusicPlayer {
 
     handleAudioError(e) {
         console.error('Audio error:', e);
-        this.showNotification('Error loading audio track', 'error');
+        this.showNotification('Error playing track. Trying next track...', 'error');
+        
+        // Try to play the next track after a short delay
+        setTimeout(() => this.playNext(), 1000);
     }
 
     updateTrackInfo() {
         if (this.currentTrack) {
-            this.trackTitle.textContent = this.currentTrack.title;
-            this.trackArtist.textContent = this.currentTrack.artist;
+            if (this.trackTitle) this.trackTitle.textContent = this.currentTrack.title || 'Unknown Track';
+            if (this.trackArtist) this.trackArtist.textContent = this.currentTrack.artist || 'Unknown Artist';
         }
     }
 
     highlightCurrentTrack() {
-        const trackItems = this.trackList.querySelectorAll('.track-item');
-        trackItems.forEach(item => {
-            item.classList.toggle('active', item.dataset.id === this.currentTrack?.id);
-        });
+        // Remove active class from all tracks
+        const trackItems = document.querySelectorAll('.track-item');
+        trackItems.forEach(item => item.classList.remove('active'));
+        
+        // Add active class to current track
+        if (this.currentTrack) {
+            const currentTrackItem = document.querySelector(`.track-item[data-id="${this.currentTrack.id}"]`);
+            if (currentTrackItem) {
+                currentTrackItem.classList.add('active');
+                // Scroll to the track in the list
+                currentTrackItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
     }
 
     updateTrackList() {
-        if (!this.currentMood) return;
+        if (!this.trackList) return;
         
-        const playlist = this.playlists[this.currentMood];
-        this.trackList.innerHTML = playlist.map((track, index) => `
-            <div class="track-item ${index === this.currentIndex ? 'active' : ''}" 
-                 data-id="${track.id}">
-                <span class="track-number">${index + 1}</span>
-                <span class="track-title">${track.title}</span>
-                <span class="track-artist">${track.artist}</span>
-                <span class="track-duration">${this.formatTime(track.duration)}</span>
-            </div>
-        `).join('');
+        if (this.playlist.length === 0) {
+            this.trackList.innerHTML = '<p class="text-muted">No tracks available for this mood</p>';
+            return;
+        }
+        
+        let html = '';
+        
+        this.playlist.forEach((track, index) => {
+            html += `
+                <div class="track-item ${this.currentIndex === index ? 'active' : ''}" data-id="${track.id}">
+                    <div class="track-info">
+                        <div class="track-title">${track.title || 'Unknown Track'}</div>
+                        <div class="track-artist">${track.artist || 'Unknown Artist'}</div>
+                    </div>
+                    <div class="track-duration">${track.duration || '--:--'}</div>
+                    <div class="track-actions">
+                        <button class="track-play" data-index="${index}"><i class="fas fa-play"></i></button>
+                        <button class="track-queue" data-index="${index}"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        this.trackList.innerHTML = html;
+        
+        // Add event listeners for track actions
+        document.querySelectorAll('.track-play').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const index = parseInt(e.currentTarget.dataset.index);
+                this.currentIndex = index;
+                this.loadTrack(this.playlist[index]);
+                this.audio.play();
+                this.isPlaying = true;
+                this.playButton.innerHTML = '<i class="fas fa-pause"></i>';
+            });
+        });
+        
+        document.querySelectorAll('.track-queue').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const index = parseInt(e.currentTarget.dataset.index);
+                this.queue.push(this.playlist[index]);
+                this.updateQueueDisplay();
+                this.showNotification(`Added "${this.playlist[index].title}" to queue`, 'success');
+            });
+        });
     }
 
     showFeedback() {
-        this.feedbackArea.style.display = 'flex';
+        if (this.feedbackArea) {
+            this.feedbackArea.style.display = 'flex';
+        }
     }
 
     hideFeedback() {
-        this.feedbackArea.style.display = 'none';
+        if (this.feedbackArea) {
+            this.feedbackArea.style.display = 'none';
+        }
     }
 
     async handleFeedbackSubmit(e) {
         e.preventDefault();
         
-        const formData = new FormData(this.feedbackForm);
-        const feedback = {
-            finalMood: formData.get('final-mood'),
-            effectivenessRating: formData.get('effectiveness-rating'),
-            sessionNotes: formData.get('session-notes')
-        };
+        // Only proceed if we have a session ID
+        if (!this.sessionId) {
+            this.showNotification('Cannot save feedback without an active session', 'error');
+            this.hideFeedback();
+            return;
+        }
+        
+        const finalMood = document.getElementById('final-mood').value;
+        const effectivenessRating = document.getElementById('effectiveness-rating').value;
+        const sessionNotes = document.getElementById('session-notes').value;
+        
+        // Calculate session duration in seconds
+        const durationSeconds = Math.floor((new Date() - this.sessionStartTime) / 1000);
         
         try {
-            // Here you would typically send the feedback to your backend
-            console.log('Feedback submitted:', feedback);
-            this.showNotification('Thank you for your feedback!', 'success');
+            const response = await fetch('/api/save-music-session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    session_id: this.sessionId,
+                    final_mood: finalMood,
+                    tracks_played: this.tracksPlayed,
+                    duration_seconds: durationSeconds,
+                    effectiveness_rating: parseInt(effectivenessRating),
+                    notes: sessionNotes
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to save session feedback');
+            }
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                this.showNotification('Feedback saved successfully', 'success');
+            } else {
+                throw new Error(data.error || 'Unknown error occurred');
+            }
+            
+            // Reset form and hide it
+            this.feedbackForm.reset();
             this.hideFeedback();
+            
         } catch (error) {
-            console.error('Error submitting feedback:', error);
-            this.showNotification('Error submitting feedback', 'error');
+            console.error('Error saving session feedback:', error);
+            this.showNotification('Failed to save feedback: ' + error.message, 'error');
         }
     }
 
     clearQueue() {
         this.queue = [];
         this.updateQueueDisplay();
-        this.showNotification('Queue cleared', 'success');
+        this.showNotification('Queue cleared', 'info');
     }
 
     updateQueueDisplay() {
+        if (!this.queueTracks) return;
+        
         if (this.queue.length === 0) {
             this.queueTracks.innerHTML = '<p class="text-muted">No tracks in queue</p>';
-        } else {
-            this.queueTracks.innerHTML = this.queue.map((track, index) => `
-                <div class="queue-track">
-                    <span>${index + 1}. ${track.title}</span>
-                    <button class="btn-remove-queue" data-index="${index}">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            `).join('');
+            return;
         }
+        
+        let html = '';
+        
+        this.queue.forEach((track, index) => {
+            html += `
+                <div class="track-item" data-id="${track.id}">
+                    <div class="track-info">
+                        <div class="track-title">${track.title || 'Unknown Track'}</div>
+                        <div class="track-artist">${track.artist || 'Unknown Artist'}</div>
+                    </div>
+                    <div class="track-actions">
+                        <button class="queue-remove" data-index="${index}"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        this.queueTracks.innerHTML = html;
+        
+        // Add event listeners for queue removal
+        document.querySelectorAll('.queue-remove').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const index = parseInt(e.currentTarget.dataset.index);
+                this.queue.splice(index, 1);
+                this.updateQueueDisplay();
+            });
+        });
     }
 
     refreshTherapyTip() {
-        const tips = [
-            "Listening to music with a tempo similar to your desired heart rate can help regulate your physical and emotional state.",
-            "Music therapy can help reduce stress and anxiety by activating the parasympathetic nervous system.",
-            "Different musical elements (tempo, rhythm, melody) can influence your mood and energy levels.",
-            "Creating a personalized playlist for specific moods can help you better manage your emotions.",
-            "Regular music therapy sessions can improve sleep quality and overall well-being."
-        ];
+        // Only proceed if we have a current mood
+        if (!this.currentMood) return;
         
-        const randomTip = tips[Math.floor(Math.random() * tips.length)];
-        this.therapyTip.textContent = randomTip;
-        this.refreshTipButton.classList.add('rotating');
-        
-        setTimeout(() => {
-            this.refreshTipButton.classList.remove('rotating');
-        }, 800);
+        fetch('/api/music-recommendations', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ mood: this.currentMood, create_session: false })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success' && data.therapy_tip && this.therapyTip) {
+                this.therapyTip.textContent = data.therapy_tip;
+            }
+        })
+        .catch(error => {
+            console.error('Error refreshing therapy tip:', error);
+        });
     }
 
     showNotification(message, type = 'info') {
         const notificationArea = document.getElementById('notification-area');
+        if (!notificationArea) return;
+        
+        const notificationId = 'notification-' + Date.now();
+        
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
+        notification.id = notificationId;
+        
         notification.innerHTML = `
-            <i class="fas ${this.getNotificationIcon(type)}"></i>
+            <i class="${this.getNotificationIcon(type)}"></i>
             <span>${message}</span>
-            <button class="notification-close">&times;</button>
+            <button class="notification-close" data-id="${notificationId}">×</button>
         `;
         
         notificationArea.appendChild(notification);
         
-        // Add close button functionality
+        // Add close event
         notification.querySelector('.notification-close').addEventListener('click', () => {
-            notification.classList.add('notification-hiding');
-            setTimeout(() => notification.remove(), 300);
+            this.hideNotification(notificationId);
         });
         
-        // Auto-remove after 5 seconds
+        // Auto hide after 5 seconds
         setTimeout(() => {
-            if (notification.parentNode) {
-                notification.classList.add('notification-hiding');
-                setTimeout(() => notification.remove(), 300);
-            }
+            this.hideNotification(notificationId);
         }, 5000);
+    }
+
+    hideNotification(id) {
+        const notification = document.getElementById(id);
+        if (notification) {
+            notification.classList.add('notification-hiding');
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }
     }
 
     getNotificationIcon(type) {
         switch (type) {
-            case 'success': return 'fa-check-circle';
-            case 'error': return 'fa-exclamation-circle';
-            case 'warning': return 'fa-exclamation-triangle';
-            default: return 'fa-info-circle';
+            case 'success': return 'fas fa-check-circle';
+            case 'error': return 'fas fa-exclamation-circle';
+            case 'warning': return 'fas fa-exclamation-triangle';
+            case 'info': 
+            default: return 'fas fa-info-circle';
         }
     }
 }
 
-// Initialize the music player when the page loads
-document.addEventListener('DOMContentLoaded', () => {
-    const player = new MusicPlayer();
+// Initialize player when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    window.musicPlayer = new MusicPlayer();
 });

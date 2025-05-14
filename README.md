@@ -8,9 +8,19 @@ A web application that helps users track their mental health through journaling,
 - Interactive games (Tic Tac Toe, Snake, Color Matching)
 - Mood tracking and analysis
 - Journal entries with sentiment analysis
-- AI-powered chat support
+- AI-powered chat support with crisis detection
 - Focus mode
 - Music therapy recommendations
+
+## Enhanced AI Features
+
+- **Advanced Sentiment Analysis**: Uses RoBERTa model to detect emotions with higher accuracy
+- **Emotion Recognition**: Detects specific emotions (anger, sadness, anxiety, fear, confusion) and responds appropriately
+- **Context Awareness**: Recognizes topics like family, relationships, work stress and tailors responses
+- **Conversation Memory**: Tracks conversation history to avoid repetitive responses
+- **Crisis Detection**: Identifies potentially concerning messages and provides appropriate resources
+- **Adaptive Responses**: Provides varied, natural responses that fit the user's emotional state
+- **Special Handling for Brief Replies**: Properly handles short user messages like "yes", "no", or "ok" without asking redundant questions
 
 ## System Requirements
 
@@ -23,7 +33,13 @@ A web application that helps users track their mental health through journaling,
 ## Installation
 
 1. Clone this repository or download the source code
-2. Run the setup script as administrator:
+2. Create a .env file from the example:
+   ```bash
+   cp env.example .env
+   ```
+   Then edit .env to add your API keys
+
+3. Run the setup script as administrator:
    ```bash
    python setup.py
    ```
@@ -32,7 +48,13 @@ A web application that helps users track their mental health through journaling,
    - Increase page file size for AI model support
    - Install required Python packages
 
-3. Restart your computer for the changes to take effect
+4. Restart your computer for the changes to take effect
+
+## API Keys
+
+For full functionality, you'll need to obtain:
+- A Google AI API key (Gemini) from https://ai.google.dev/
+- Add it to your .env file as GEMINI_API_KEY=your-key-here
 
 ## Running the Application
 
@@ -42,6 +64,14 @@ A web application that helps users track their mental health through journaling,
    python main.py
    ```
 3. Open your web browser and navigate to `http://localhost:5000`
+
+## Testing the Sentiment Analysis
+
+To test the RoBERTa sentiment analyzer functionality:
+```bash
+python test_sentiment.py
+```
+This will demonstrate the advanced sentiment analysis and crisis detection features.
 
 ## Troubleshooting
 

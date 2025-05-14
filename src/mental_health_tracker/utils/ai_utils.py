@@ -1,11 +1,13 @@
 from textblob import TextBlob
 import json
 import numpy as np
+import random
 from datetime import datetime, timedelta
 from transformers import pipeline
 import logging
 import google.generativeai as genai
 from ..config import GEMINI_API_KEY
+from .sentiment_analyzer import SentimentAnalyzer
 
 # Import the missing MoodEntry model
 try:
@@ -19,348 +21,345 @@ except ImportError:
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize sentiment and emotion analyzers with error handling
+# Initialize sentiment analyzer and other pipelines
 try:
-    sentiment_analyzer = pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
-    emotion_analyzer = pipeline("text-classification", model="j-hartmann/emotion-english-distilroberta-base")
-    logger.info("Successfully loaded sentiment and emotion analysis models")
+    sentiment_analyzer = SentimentAnalyzer()
+    logger.info("Successfully initialized sentiment analyzer")
 except Exception as e:
-    logger.warning(f"Failed to load AI models: {str(e)}. Using TextBlob as fallback.")
+    logger.error(f"Error initializing sentiment analyzer: {str(e)}")
     sentiment_analyzer = None
-    emotion_analyzer = None
 
-# Configure Gemini API
+# Initialize Gemini
 try:
-    genai.configure(api_key=GEMINI_API_KEY)
-    model_config = {
-        "temperature": 0.7,
-        "top_p": 0.8,
-        "top_k": 40,
-        "max_output_tokens": 1024,
-    }
-    gemini_model = genai.GenerativeModel("gemini-pro", generation_config=model_config)
-    chat_session = gemini_model.start_chat(history=[])
-    logger.info("Successfully initialized Gemini model")
+    if GEMINI_API_KEY:
+        genai.configure(api_key=GEMINI_API_KEY)
+        chat_session = genai.GenerativeModel("gemini-pro")
+        logger.info("Successfully initialized Google Gemini AI")
+    else:
+        logger.warning("No Gemini API key found. Fallback responses will be used.")
+        chat_session = None
 except Exception as e:
-    logger.error(f"Failed to initialize Gemini model: {str(e)}")
-    logger.info("Falling back to template-based responses")
-    gemini_model = None
+    logger.error(f"Error initializing Gemini API: {str(e)}")
     chat_session = None
 
+
 def analyze_sentiment(text):
-    """Analyze sentiment of text using TextBlob and transformers if available"""
+    """
+    Determine the sentiment of the given text.
+    
+    Args:
+        text (str): The text to analyze
+        
+    Returns:
+        tuple: A tuple of (sentiment_score, sentiment_label)
+    """
     try:
-        # Get TextBlob sentiment (always available as a fallback)
-        blob = TextBlob(text)
-        textblob_score = blob.sentiment.polarity
-        
-        # Try to get transformers sentiment if available
         if sentiment_analyzer:
-            try:
-                result = sentiment_analyzer(text)[0]
-                transformers_score = float(result['score'])
-                if result['label'] == 'NEGATIVE':
-                    transformers_score = -transformers_score
-                
-                # Combine both scores
-                final_score = (textblob_score + transformers_score) / 2
-            except Exception as e:
-                logger.error(f"Error using transformer model: {str(e)}")
-                final_score = textblob_score  # Fallback to TextBlob
+            # Use our advanced sentiment analyzer
+            result = sentiment_analyzer.analyze_sentiment(text)
+            sentiment_label = result["sentiment"]
+            sentiment_score = result["score"]
+            return sentiment_score, sentiment_label
         else:
-            final_score = textblob_score
-        
-        # Determine label
-        if final_score > 0.2:
-            return final_score, 'POSITIVE'
-        elif final_score < -0.2:
-            return final_score, 'NEGATIVE'
-        else:
-            return final_score, 'NEUTRAL'
+            # Fallback to TextBlob
+            blob = TextBlob(text)
+            score = blob.sentiment.polarity
+            
+            if score > 0.3:
+                return 0.7, "positive"
+            elif score < -0.3:
+                return 0.7, "negative"
+            else:
+                return 0.5, "neutral"
     except Exception as e:
-        logger.error(f"Critical error in sentiment analysis: {str(e)}")
-        return 0.0, 'NEUTRAL'
+        logger.error(f"Error in sentiment analysis: {str(e)}")
+        return 0.5, "neutral"
+
 
 def analyze_emotions(text):
-    """Analyze emotions in text using transformers if available, otherwise return basic emotions"""
-    try:
-        if emotion_analyzer:
-            try:
-                results = emotion_analyzer(text)
-                if isinstance(results, list) and len(results) > 0:
-                    # Handle different formats of results
-                    if isinstance(results[0], dict) and 'label' in results[0] and 'score' in results[0]:
-                        emotions = {result['label']: float(result['score']) for result in results}
-                    else:
-                        # Fallback to basic emotion detection
-                        emotions = {"joy": 0.5, "sadness": 0.5}
-                else:
-                    emotions = {"neutral": 1.0}
-            except Exception as e:
-                logger.error(f"Error using emotion analyzer: {str(e)}")
-                # Fallback to basic emotion detection using TextBlob
-                emotions = _get_basic_emotions(text)
-        else:
-            # Fallback to basic emotion detection using TextBlob
-            emotions = _get_basic_emotions(text)
-            
-        return emotions  # Return dictionary directly
-    except Exception as e:
-        logger.error(f"Critical error in emotion analysis: {str(e)}")
-        return {"neutral": 1.0}
-
-def _get_basic_emotions(text):
-    """Fallback method to get basic emotions using TextBlob"""
-    try:
-        blob = TextBlob(text)
-        score = blob.sentiment.polarity
-        if score > 0.2:
-            return {"joy": 0.8, "sadness": 0.2}
-        elif score < -0.2:
-            return {"joy": 0.2, "sadness": 0.8}
-        else:
-            return {"joy": 0.5, "sadness": 0.5}
-    except Exception:
-        return {"neutral": 1.0}
-
-def get_mood_patterns(user_id, db, days=7):
-    """Analyze mood patterns over time"""
-    try:
-        recent_moods = db.session.query(MoodEntry).filter(
-            MoodEntry.user_id == user_id,
-            MoodEntry.date_created >= datetime.utcnow() - timedelta(days=days)
-        ).all()
+    """
+    Identify emotions in the given text.
+    
+    Args:
+        text (str): The text to analyze
         
-        if not recent_moods:
-            return None
+    Returns:
+        dict: A dictionary of emotions and their scores
+    """
+    try:
+        if sentiment_analyzer:
+            # Use our sentiment analyzer to detect emotions
+            result = sentiment_analyzer.analyze_sentiment(text)
+            detected_emotions = result.get("detected_emotions", [])
             
-        # Calculate average mood and trend
-        mood_scores = [mood.mood_score for mood in recent_moods]
-        avg_mood = sum(mood_scores) / len(mood_scores)
-        
-        # Calculate trend (positive if improving, negative if declining)
-        if len(mood_scores) > 1:
-            trend = mood_scores[-1] - mood_scores[0]
+            # Convert the list of emotions to a dict with fake scores
+            emotion_dict = {}
+            for i, emotion in enumerate(detected_emotions):
+                # Weight emotions by their order - first ones are stronger
+                score = 1.0 - (i * 0.2)
+                if score > 0:
+                    emotion_dict[emotion] = score
+            
+            return emotion_dict
         else:
-            trend = 0
+            # Simple keyword-based approach as fallback
+            emotions = {}
+            keywords = {
+                "joy": ["happy", "excited", "glad", "joy", "delighted"],
+                "sadness": ["sad", "unhappy", "depressed", "down", "miserable"],
+                "anger": ["angry", "mad", "furious", "annoyed", "irritated"],
+                "fear": ["afraid", "scared", "fearful", "terrified", "worried"],
+                "surprise": ["surprised", "shocked", "amazed", "astonished"],
+                "disgust": ["disgusted", "repulsed", "revolted"],
+                "love": ["love", "adore", "cherish", "affection"],
+                "confusion": ["confused", "puzzled", "perplexed"],
+            }
             
-        return {
-            "average_mood": round(avg_mood, 2),
-            "trend": round(trend, 2),
-            "total_entries": len(recent_moods)
-        }
+            text_lower = text.lower()
+            for emotion, words in keywords.items():
+                for word in words:
+                    if word in text_lower:
+                        emotions[emotion] = emotions.get(emotion, 0) + 0.7
+            
+            return emotions
     except Exception as e:
-        logger.error(f"Error in mood pattern analysis: {str(e)}")
-        return None
+        logger.error(f"Error in emotion analysis: {str(e)}")
+        return {}
+
+
+def check_crisis_keywords(text):
+    """
+    Check if the text contains any crisis keywords that might indicate a user needs immediate help.
+    
+    Args:
+        text (str): The text to check
+        
+    Returns:
+        bool: True if crisis keywords are found, False otherwise
+    """
+    try:
+        if sentiment_analyzer:
+            # Use the sentiment analyzer's internal crisis detection
+            result = sentiment_analyzer.analyze_sentiment(text)
+            return result["sentiment"] == "highly_negative"
+        else:
+            # Manual fallback for crisis detection
+            crisis_keywords = [
+                "suicide", "kill myself", "end my life", "don't want to live",
+                "better off dead", "no reason to live", "can't go on", 
+                "want to die", "hopeless", "worthless"
+            ]
+            
+            text_lower = text.lower()
+            for keyword in crisis_keywords:
+                if keyword in text_lower:
+                    return True
+            
+            return False
+    except Exception as e:
+        logger.error(f"Error in crisis keyword detection: {str(e)}")
+        return False
+
+
+def get_crisis_resources():
+    """
+    Provide crisis resources for users in need.
+    
+    Returns:
+        str: A string with crisis resources
+    """
+    if sentiment_analyzer:
+        return random.choice(sentiment_analyzer.crisis_resources)
+    else:
+        return ("If you're in crisis, please contact the National Suicide Prevention Lifeline "
+               "at 988 or 1-800-273-8255, or text HOME to 741741 to reach the Crisis Text Line.")
+
 
 def generate_chat_response(message, user_context=None):
-    """Generate a chat response using Gemini if available, otherwise fall back to template-based responses"""
+    """Generate a personalized, therapeutic chat response with context awareness"""
     try:
         # Try using Gemini first
         if chat_session:
             try:
-                # Construct context-aware prompt
-                context_prompt = "You are an empathetic AI mental health assistant. "
-                if user_context:
-                    if 'recent_mood_avg' in user_context:
-                        context_prompt += f"The user's average mood has been {user_context['recent_mood_avg']}/5. "
-                    if 'mood_trend' in user_context:
-                        trend = "improving" if user_context['mood_trend'] > 0 else "declining" if user_context['mood_trend'] < 0 else "stable"
-                        context_prompt += f"Their mood has been {trend}. "
-                    if 'last_journal_sentiment' in user_context:
-                        context_prompt += f"Their recent journal entries show {user_context['last_journal_sentiment']} sentiment. "
-                
-                # Analyze emotions for additional context
+                # Get sentiment and emotion analysis
+                sentiment_score, sentiment_label = analyze_sentiment(message)
                 emotions = analyze_emotions(message)
-                if emotions:
-                    dominant_emotion = max(emotions.items(), key=lambda x: x[1])[0]
-                    context_prompt += f"The user seems to be feeling {dominant_emotion}. "
+                dominant_emotion = max(emotions.items(), key=lambda x: x[1])[0] if emotions else "neutral"
                 
-                context_prompt += f"Here's their message: '{message}'. Respond with empathy and support."
+                # Build a more directive system prompt to improve response quality
+                system_prompt = f"""
+                You are a supportive mental health companion chatbot, like a caring friend who listens well.
                 
-                # Get response from Gemini
-                response = chat_session.send_message(context_prompt)
-                return response.text
+                Current conversation sentiment: {sentiment_label} ({sentiment_score:.2f})
+                Detected emotions: {', '.join(emotions.keys()) if emotions else 'none detected'}
+                
+                Key guidelines:
+                - Be warm, supportive, and conversational - like a caring friend, not a therapist
+                - Keep responses brief (2-4 sentences) and natural sounding
+                - Be empathetic but not overly clinical
+                - Strictly limit yourself to ONE or ZERO questions per response
+                - For very short user messages (like "yes" or "no"), respond naturally without asking another question
+                - If user asks a direct question, provide a direct answer
+                - Avoid phrases like "I understand" or "I hear you" too frequently
+                - Don't repeat the same response patterns
+                - Don't analyze the user's feelings back to them repeatedly
+                
+                The user's message indicates {dominant_emotion} emotion. Address this appropriately.
+                """
+                
+                # Check for crisis keywords and provide resources
+                is_crisis = check_crisis_keywords(message)
+                
+                if is_crisis:
+                    crisis_resources = get_crisis_resources()
+                    system_prompt += f"\nIMPORTANT: The user may be in crisis. Include this resource: {crisis_resources}"
+                
+                # Get context-appropriate response using our sentiment analyzer
+                if sentiment_analyzer:
+                    sentiment_result = sentiment_analyzer.analyze_sentiment(message)
+                    response_data = sentiment_analyzer.get_response(sentiment_result)
+                    
+                    # Use the response directly from the analyzer
+                    ai_response = response_data["response_text"]
+                    
+                    # Add crisis resources if needed
+                    if response_data.get("additional_info"):
+                        ai_response += f"\n\n{response_data['additional_info']}"
+                    
+                    return ai_response
+                
+                # Fallback to Gemini
+                prompt = message
+                
+                # For very brief responses, add context to get better results
+                if len(message.split()) < 3:
+                    prompt = f"The user has sent a very brief message: '{message}'. Respond naturally without asking another question."
+                
+                # For question detection
+                is_question = "?" in message or message.lower().startswith(("why", "what", "how", "who", "when", "where", "can", "could", "would", "do", "does", "is", "are"))
+                if is_question:
+                    prompt = f"The user is asking a direct question: '{message}'. Provide a supportive, direct answer."
+                
+                # Generate response with Gemini
+                # Split the system prompt from the user message to assist the model
+                response = chat_session.generate_content([
+                    {"role": "user", "parts": [system_prompt]},
+                    {"role": "model", "parts": ["I'll follow these guidelines carefully."]},
+                    {"role": "user", "parts": [prompt]}
+                ])
+                
+                # Extract just the text response
+                ai_response = response.text
+                
+                # Add crisis resources if needed but wasn't included
+                if is_crisis and "crisis" not in ai_response.lower() and "lifeline" not in ai_response.lower():
+                    ai_response += f"\n\n{get_crisis_resources()}"
+                
+                return ai_response
                 
             except Exception as e:
-                logger.error(f"Error using Gemini model: {str(e)}")
-                # Fall back to template-based response
-                return _generate_template_response(message, user_context)
+                logger.error(f"Error in Gemini response generation: {str(e)}")
+                # Fall back to a more robust option
+                if sentiment_analyzer:
+                    sentiment_result = sentiment_analyzer.analyze_sentiment(message)
+                    response_data = sentiment_analyzer.get_response(sentiment_result)
+                    return response_data["response_text"]
+                else:
+                    return _generate_improved_fallback(message)
         else:
-            # Use template-based response if Gemini is not available
-            return _generate_template_response(message, user_context)
-            
+            # Use sentiment analyzer directly if Gemini isn't available
+            if sentiment_analyzer:
+                sentiment_result = sentiment_analyzer.analyze_sentiment(message)
+                response_data = sentiment_analyzer.get_response(sentiment_result)
+                
+                ai_response = response_data["response_text"]
+                
+                # Add crisis resources if needed
+                if response_data.get("additional_info"):
+                    ai_response += f"\n\n{response_data['additional_info']}"
+                
+                return ai_response
+            else:
+                # Last resort fallback
+                return _generate_improved_fallback(message)
     except Exception as e:
-        logger.error(f"Critical error in chat response generation: {str(e)}")
-        return "I'm here to listen and support you. How can I help?"
+        logger.error(f"Error in chat response generation: {str(e)}")
+        return "I'm having trouble processing that right now. How are you feeling today?"
 
-def _generate_template_response(message, user_context=None):
-    """Original template-based response generation as fallback"""
-    # Analyze sentiment and emotions for context
-    sentiment = analyze_sentiment(message)
-    emotions = analyze_emotions(message)
-    
-    # Define contextual response templates
-    context_templates = {
-        'emotional_support': {
-            'patterns': ['feel', 'feeling', 'sad', 'depressed', 'unhappy', 'lonely', 'alone', 'miserable'],
-            'responses': [
-                "I can hear that you're experiencing some difficult emotions. It's completely valid to feel this way. Could you tell me more about what's been happening? I'm here to listen and support you through this.",
-                "Thank you for sharing your feelings with me. It takes courage to open up. Would you like to explore what might be contributing to these feelings? Sometimes talking things through can help us understand them better.",
-                "I'm here to support you through these emotions. Let's take a moment to understand what you're going through. What do you think triggered these feelings?"
-            ]
-        },
-        'anxiety_support': {
-            'patterns': ['anxious', 'worried', 'nervous', 'stress', 'stressed', 'overwhelmed', 'panic', 'fear'],
-            'responses': [
-                "I understand anxiety can be really overwhelming. Let's break this down together. What specific aspects are causing you the most concern right now? We can work on some coping strategies that might help.",
-                "Anxiety is a natural response, but I hear that it's becoming difficult to manage. Would you like to try some grounding exercises together? They can help bring you back to the present moment.",
-                "When you're feeling anxious, it's important to remember that you're not alone. Can you tell me more about what's making you feel this way? Understanding the triggers can help us develop better coping mechanisms."
-            ]
-        },
-        'positive_reinforcement': {
-            'patterns': ['happy', 'good', 'great', 'better', 'proud', 'accomplished', 'excited', 'hopeful'],
-            'responses': [
-                "It's wonderful to hear you're experiencing positive emotions! These moments are worth celebrating. What specific things have contributed to your good mood? Identifying these can help maintain this positive state.",
-                "I'm really glad you're feeling this way! It's important to acknowledge and appreciate these positive moments. Would you like to explore what's working well for you? This can help build on these positive experiences.",
-                "Your positive outlook is inspiring! Let's take a moment to reflect on what's going well. Understanding what brings us joy can help us create more such moments in the future."
-            ]
-        },
-        'seeking_help': {
-            'patterns': ['help', 'advice', 'suggestion', 'guidance', 'support', 'cope', 'deal'],
-            'responses': [
-                "I appreciate you reaching out for support. That's a really positive step. Could you tell me more specifically what kind of help you're looking for? This will help me provide more targeted suggestions.",
-                "Thank you for trusting me with your concerns. Let's work together to find strategies that work for you. What have you tried so far, and what kind of support would be most helpful right now?",
-                "Seeking help is a sign of strength, not weakness. I'm here to support you. Could you share more about what you're hoping to achieve? This will help us develop a more effective approach."
-            ]
-        }
-    }
-    
-    # Check message context and generate appropriate response
+
+def _generate_improved_fallback(message):
+    """Generate a fallback response when AI services are unavailable"""
     message_lower = message.lower()
     
-    # Unpack sentiment analysis results
-    sentiment_score, sentiment_label = sentiment
-    
-    # Find matching context
-    for context, data in context_templates.items():
-        if any(pattern in message_lower for pattern in data['patterns']):
-            # Get base response
-            base_response = np.random.choice(data['responses'])
-            
-            # Add sentiment-based acknowledgment
-            if sentiment_label == "NEGATIVE":
-                sentiment_prefix = "I can sense that this is difficult for you. "
-            elif sentiment_label == "POSITIVE":
-                sentiment_prefix = "I'm glad you're feeling positive about this. "
-            else:
-                sentiment_prefix = ""
-            
-            # Add emotion-specific support
-            if emotions:
-                dominant_emotion = max(emotions.items(), key=lambda x: x[1])[0]
-                if dominant_emotion in ['sadness', 'fear', 'anger']:
-                    emotion_support = f"\n\nI notice you're feeling strong {dominant_emotion}. Remember that emotions are temporary and it's okay to feel this way. Would you like to explore some coping strategies specific to dealing with {dominant_emotion}?"
-                elif dominant_emotion in ['joy', 'love', 'surprise']:
-                    emotion_support = f"\n\nIt's great to see your {dominant_emotion}! These positive emotions can be really energizing. Would you like to discuss ways to maintain this positive state?"
-                else:
-                    emotion_support = ""
-            else:
-                emotion_support = ""
-            
-            return sentiment_prefix + base_response + emotion_support
-    
-    # If no specific context matches, provide a thoughtful general response
-    if sentiment == "POSITIVE":
-        return "I appreciate you sharing that with me. Your positive energy comes through in your message. Would you like to explore what's contributing to these good feelings? Understanding what works well for us can help create more positive experiences."
-    elif sentiment == "NEGATIVE":
-        return "Thank you for opening up to me. I can hear that you're going through something challenging. I'm here to listen and support you. Would you like to talk more about what's troubling you? Sometimes sharing our concerns can help us see them from a new perspective."
-    else:
-        return "Thank you for sharing your thoughts with me. I'm here to listen and support you in whatever way would be most helpful. Would you like to explore your feelings further or discuss any specific concerns you have?"
-
-def generate_recommendations(emotions_data):
-    """Generate personalized recommendations based on detected emotions"""
-    try:
-        # If emotions_data is a string, parse it
-        if isinstance(emotions_data, str):
-            emotions = json.loads(emotions_data)
-        else:
-            emotions = emotions_data
-            
-        recommendations = []
-        
-        # Find the dominant emotion(s)
-        if not emotions:
-            return ["Consider tracking your mood regularly to get personalized recommendations."]
-            
-        # Sort emotions by intensity
-        sorted_emotions = sorted(emotions.items(), key=lambda x: x[1], reverse=True)
-        dominant_emotion, intensity = sorted_emotions[0]
-        
-        # Generate recommendations based on the dominant emotion
-        if dominant_emotion == "joy" or dominant_emotion == "happy":
-            recommendations = [
-                "It's great that you're feeling positive! Consider journaling about what contributed to these good feelings.",
-                "Maintain this positive momentum by engaging in activities you enjoy.",
-                "Share your positive energy with others who might need support."
-            ]
-        elif dominant_emotion == "sadness":
-            recommendations = [
-                "Consider practicing self-compassion exercises when feeling down.",
-                "Gentle physical activity like walking or yoga might help lift your mood.",
-                "Connecting with a supportive friend or family member could be beneficial.",
-                "Try our Music Therapy feature with calming tracks to soothe your mind."
-            ]
-        elif dominant_emotion == "anger":
-            recommendations = [
-                "Practice deep breathing exercises to help manage intense feelings.",
-                "Consider writing a letter expressing your feelings (without sending it).",
-                "Physical exercise can be an effective way to release tension.",
-                "Try our Focus Mode to channel your energy productively."
-            ]
-        elif dominant_emotion == "fear" or dominant_emotion == "anxious":
-            recommendations = [
-                "Grounding exercises can help when feeling overwhelmed or anxious.",
-                "Try the 5-4-3-2-1 technique: identify 5 things you see, 4 things you can touch, 3 things you hear, 2 things you smell, and 1 thing you taste.",
-                "Our breathing exercises in the Games section might help reduce anxiety.",
-                "Consider scheduling worry time to contain anxious thoughts."
-            ]
-        elif dominant_emotion == "surprise":
-            recommendations = [
-                "Take time to process unexpected events or information.",
-                "Journaling can help you make sense of surprising developments.",
-                "Consider how this surprise aligns with or challenges your expectations."
-            ]
-        elif dominant_emotion == "disgust":
-            recommendations = [
-                "Reflect on what triggered these feelings and whether a boundary has been crossed.",
-                "Consider if there are actions you can take to address the situation.",
-                "Self-care activities might help restore your sense of well-being."
-            ]
-        else:
-            recommendations = [
-                "Continue tracking your emotions to receive more personalized recommendations.",
-                "Regular journaling can help you identify patterns in your emotional experiences.",
-                "Consider trying different features of our app to support your mental well-being."
-            ]
-            
-        # Add some general well-being recommendations
-        general_recommendations = [
-            "Remember that emotions are temporary and will pass with time.",
-            "Practicing mindfulness can help you stay present with your feelings without judgment.",
-            "Regular sleep, nutrition, and exercise form the foundation of mental well-being."
+    # For very short responses, don't ask questions back
+    if len(message.split()) < 3:
+        brief_responses = [
+            "I'm here with you. There's no rush to share more - I'm here to support you at your own pace.",
+            "Thanks for letting me know. I'm here to support you through whatever you're experiencing.",
+            "I appreciate you checking in. I'm here to listen whenever you're ready to share more.",
+            "I understand. Take your time - I'm here to talk whenever you feel ready."
         ]
-        
-        # Combine specific and general recommendations
-        recommendations.extend(general_recommendations)
-        
-        # Randomly select 3 recommendations to avoid overwhelming the user
-        if len(recommendations) > 3:
-            import random
-            recommendations = random.sample(recommendations, 3)
-            
-        return recommendations
-        
-    except Exception as e:
-        logger.error(f"Error generating recommendations: {str(e)}")
-        return ["Continue tracking your emotions for personalized recommendations."]
+        return random.choice(brief_responses)
+    
+    # For questions, try to provide a more direct response
+    if "?" in message or message_lower.startswith(("why", "what", "how", "who", "when", "where", "can", "could", "would", "do", "does", "is", "are")):
+        question_responses = [
+            "That's a thoughtful question. While I'm not able to provide specific answers, I'm here to support you in finding your own insights.",
+            "I understand why you might be wondering about that. What are your own thoughts on this question?",
+            "That's something many people wonder about. While I don't have a perfect answer, I'm here to explore this with you.",
+            "That's a good question to reflect on. What feels most true for you when you consider this?"
+        ]
+        return random.choice(question_responses)
+    
+    # Context-specific responses based on emotional keywords
+    if any(word in message_lower for word in ["sad", "down", "depressed", "unhappy", "miserable"]):
+        emotion_responses = [
+            "I hear that you're feeling down. Those emotions are completely valid, and it takes courage to acknowledge them. Try to be gentle with yourself right now.",
+            "I'm sorry you're feeling sad. Would you like to talk more about what's weighing on you? Sometimes sharing can help lighten the burden.",
+            "Those feelings of sadness are valid. Remember that all emotions pass with time, even though it might not feel that way right now."
+        ]
+        return random.choice(emotion_responses)
+    
+    if any(word in message_lower for word in ["anxious", "worried", "nervous", "stress", "overwhelm"]):
+        emotion_responses = [
+            "It sounds like you're feeling anxious. Taking slow, deep breaths might help in this moment.",
+            "When we feel stressed, it's important to remember that these feelings aren't permanent. What's one small thing you could do to care for yourself right now?",
+            "Feeling overwhelmed is really challenging. Sometimes breaking things down into smaller steps can help make things feel more manageable."
+        ]
+        return random.choice(emotion_responses)
+    
+    if any(word in message_lower for word in ["angry", "mad", "frustrated", "annoyed", "upset"]):
+        emotion_responses = [
+            "I can hear your frustration. Those feelings are completely valid given what you've shared.",
+            "It's natural to feel angry in situations like this. How might you channel that energy in a way that feels helpful for you?",
+            "Your feelings of anger make sense. Sometimes writing down our thoughts can help us process these strong emotions."
+        ]
+        return random.choice(emotion_responses)
+    
+    # Family/relationship context
+    if any(word in message_lower for word in ["family", "parent", "mother", "father", "mom", "dad", "sister", "brother", "spouse", "partner", "relationship"]):
+        relationship_responses = [
+            "Family relationships can be deeply complex. It's okay to have mixed feelings about the people closest to us.",
+            "Navigating relationships takes a lot of emotional energy. Remember that it's okay to set boundaries when needed.",
+            "Those close to us can have the biggest impact on our wellbeing. What might help you feel more at peace with this situation?"
+        ]
+        return random.choice(relationship_responses)
+    
+    # Work/school context
+    if any(word in message_lower for word in ["work", "job", "boss", "career", "school", "class", "study", "exam"]):
+        work_responses = [
+            "The pressures of work/school can really add up. Remember that your worth isn't defined by your productivity.",
+            "It's common to feel stressed about our professional/academic lives. What small step might help make this situation more manageable?",
+            "Finding balance with work/school can be challenging. Your wellbeing matters just as much as your obligations."
+        ]
+        return random.choice(work_responses)
+    
+    # Generic supportive responses as last resort
+    generic_responses = [
+        "Thank you for sharing that with me. I'm here to support you through whatever you're experiencing.",
+        "I appreciate you opening up. Would it help to explore this situation further?",
+        "It takes courage to express how you're feeling. What would feel most supportive right now?",
+        "I'm here with you through this. Would it help to talk more about what's on your mind?"
+    ]
+    
+    return random.choice(generic_responses)
