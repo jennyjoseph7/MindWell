@@ -1,0 +1,756 @@
+{% extends "base.html" %}
+
+{% block title %}Therapy Session Booking - MindWell{% endblock %}
+
+{% block content %}
+<div class="counseling-booking-container">
+    <!-- Header Section -->
+    <div class="booking-header">
+        <div class="container">
+            <h1 class="booking-title">
+                <i class="fas fa-calendar-check text-primary"></i>
+                Therapy Session Booking
+            </h1>
+            <p class="booking-subtitle">Book your therapy sessions with qualified mental health professionals</p>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Booked Sessions Panel -->
+            <div class="col-lg-4">
+                <div class="card sessions-panel">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calendar-alt"></i> Your Booked Sessions
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if booked_sessions %}
+                            <div class="sessions-list">
+                                {% for session in booked_sessions %}
+                                <div class="session-item">
+                                    <div class="session-header">
+                                        <h6 class="therapist-name">{{ session.therapist_name }}</h6>
+                                        <span class="session-status status-{{ session.status }}">
+                                            {{ session.status.title() }}
+                                        </span>
+                                    </div>
+                                    <div class="session-details">
+                                        <p class="session-date">
+                                            <i class="fas fa-calendar"></i> {{ session.date }}
+                                        </p>
+                                        <p class="session-time">
+                                            <i class="fas fa-clock"></i> {{ session.time }}
+                                        </p>
+                                        <p class="session-type">
+                                            <i class="fas fa-user"></i> {{ session.session_type }}
+                                        </p>
+                                        <p class="session-location">
+                                            <i class="fas fa-map-marker-alt"></i> {{ session.location }}
+                                        </p>
+                                    </div>
+                                    <div class="session-actions">
+                                        {% if session.status == 'confirmed' %}
+                                        <button class="btn btn-sm btn-outline-danger" onclick="cancelSession('{{ session.id }}')">
+                                            <i class="fas fa-times"></i> Cancel
+                                        </button>
+                                        {% elif session.status == 'pending' %}
+                                        <button class="btn btn-sm btn-outline-warning" onclick="rescheduleSession('{{ session.id }}')">
+                                            <i class="fas fa-edit"></i> Reschedule
+                                        </button>
+                                        {% endif %}
+                                        <button class="btn btn-sm btn-outline-primary" onclick="viewSessionDetails('{{ session.id }}')">
+                                            <i class="fas fa-eye"></i> Details
+                                        </button>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="no-sessions">
+                                <i class="fas fa-calendar-times text-muted"></i>
+                                <p class="text-muted">No sessions booked yet</p>
+                                <p class="text-muted small">Book your first therapy session below</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Booking Area -->
+            <div class="col-lg-8">
+                <!-- Date Selection -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calendar"></i> Select Date
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="date-picker-container">
+                            <input type="date" id="session-date" class="form-control" 
+                                   value="{{ selected_date }}" min="{{ selected_date }}">
+                        </div>
+                        <div class="available-slots mt-3">
+                            <h6>Available Time Slots:</h6>
+                            <div class="time-slots">
+                                {% for slot in available_slots %}
+                                <button class="btn btn-outline-primary time-slot-btn" data-time="{{ slot }}">
+                                    {{ slot }}
+                                </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nearby Therapists -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-user-md"></i> Nearby Therapists
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="therapists-grid">
+                            {% for therapist in nearby_therapists %}
+                            <div class="therapist-card" data-therapist-id="{{ therapist.id }}">
+                                <div class="therapist-image">
+                                    <img src="{{ therapist.image }}" alt="{{ therapist.name }}" 
+                                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iNDAiIGN5PSI0MCIgcj0iNDAiIGZpbGw9IiM2NjdlZWEiLz4KPHRleHQgeD0iNDAiIHk9IjQ1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmb250LXdlaWdodD0iYm9sZCI+RFI8L3RleHQ+Cjwvc3ZnPg=='">
+                                </div>
+                                <div class="therapist-info">
+                                    <h6 class="therapist-name">{{ therapist.name }}</h6>
+                                    <p class="therapist-specialty">{{ therapist.specialty }}</p>
+                                    <div class="therapist-rating">
+                                        <span class="stars">
+                                            {% for i in range(5) %}
+                                                {% if i < therapist.rating %}
+                                                    <i class="fas fa-star text-warning"></i>
+                                                {% else %}
+                                                    <i class="far fa-star text-warning"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </span>
+                                        <span class="rating-text">{{ therapist.rating }}</span>
+                                    </div>
+                                    <div class="therapist-details">
+                                        <p class="experience">
+                                            <i class="fas fa-briefcase"></i> {{ therapist.experience }} experience
+                                        </p>
+                                        <p class="location">
+                                            <i class="fas fa-map-marker-alt"></i> {{ therapist.location }}
+                                        </p>
+                                        <p class="distance">
+                                            <i class="fas fa-route"></i> {{ therapist.distance }} away
+                                        </p>
+                                        <p class="price">
+                                            <i class="fas fa-rupee-sign"></i> {{ therapist.price_per_session }}/session
+                                        </p>
+                                    </div>
+                        <div class="therapist-actions">
+                            <button class="btn btn-primary btn-sm" onclick="selectTherapist('{{ therapist.id }}')">
+                                <i class="fas fa-calendar-plus"></i> Book Session
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="viewTherapistDetails('{{ therapist.id }}')">
+                                <i class="fas fa-info-circle"></i> Details
+                            </button>
+                        </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Booking Modal -->
+<div class="modal fade" id="bookingModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Book Therapy Session</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="booking-form">
+                    <input type="hidden" id="selected-therapist-id">
+                    <input type="hidden" id="selected-date">
+                    <input type="hidden" id="selected-time">
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Session Type</label>
+                                <select class="form-select" id="session-type" required>
+                                    <option value="">Select session type</option>
+                                    <option value="individual">Individual Therapy</option>
+                                    <option value="couples">Couples Therapy</option>
+                                    <option value="family">Family Counseling</option>
+                                    <option value="group">Group Therapy</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Session Duration</label>
+                                <select class="form-select" id="session-duration">
+                                    <option value="50">50 minutes</option>
+                                    <option value="60">60 minutes</option>
+                                    <option value="90">90 minutes</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Location Preference</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="location" id="online" value="online" checked>
+                            <label class="form-check-label" for="online">
+                                Online Session (Video Call)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="location" id="clinic" value="clinic">
+                            <label class="form-check-label" for="clinic">
+                                In-Person at Clinic
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Additional Notes (Optional)</label>
+                        <textarea class="form-control" id="session-notes" rows="3" 
+                                  placeholder="Any specific concerns or preferences for this session..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="confirmBooking()">
+                    <i class="fas fa-calendar-check"></i> Confirm Booking
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.counseling-booking-container {
+    min-height: calc(100vh - 56px);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem 0;
+}
+
+.booking-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: white;
+}
+
+.booking-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.booking-subtitle {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+.sessions-panel {
+    height: 100%;
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.sessions-list {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.session-item {
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.session-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.session-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.therapist-name {
+    margin: 0;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.session-status {
+    padding: 0.25rem 0.5rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.status-confirmed {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-completed {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.session-details p {
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.session-actions {
+    margin-top: 0.5rem;
+}
+
+.session-actions .btn {
+    margin-right: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.no-sessions {
+    text-align: center;
+    padding: 2rem;
+}
+
+.no-sessions i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.therapists-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.therapist-card {
+    border: 1px solid #e9ecef;
+    border-radius: 15px;
+    padding: 1.5rem;
+    background: white;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.therapist-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.therapist-image {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.therapist-image img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #667eea;
+}
+
+.therapist-name {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.therapist-specialty {
+    color: #667eea;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.therapist-rating {
+    margin-bottom: 1rem;
+}
+
+.rating-text {
+    margin-left: 0.5rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.therapist-details p {
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.therapist-actions {
+    margin-top: 1rem;
+}
+
+.therapist-actions .btn {
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.time-slots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.time-slot-btn {
+    margin-bottom: 0.5rem;
+}
+
+.time-slot-btn.selected {
+    background-color: #667eea;
+    border-color: #667eea;
+    color: white;
+}
+
+.date-picker-container {
+    max-width: 300px;
+}
+
+@media (max-width: 768px) {
+    .therapists-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .booking-title {
+        font-size: 2rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Counseling booking page loaded');
+    
+    const dateInput = document.getElementById('session-date');
+    const timeSlotBtns = document.querySelectorAll('.time-slot-btn');
+    const therapistCards = document.querySelectorAll('.therapist-card');
+    
+    console.log('Found elements:', {
+        dateInput: !!dateInput,
+        timeSlotBtns: timeSlotBtns.length,
+        therapistCards: therapistCards.length
+    });
+    
+    // Handle date change
+    if (dateInput) {
+        dateInput.addEventListener('change', function() {
+            const selectedDate = this.value;
+            console.log('Date changed to:', selectedDate);
+        });
+    }
+    
+    // Handle time slot selection
+    timeSlotBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            console.log('Time slot clicked:', this.dataset.time);
+            // Remove selected class from all buttons
+            timeSlotBtns.forEach(b => b.classList.remove('selected'));
+            // Add selected class to clicked button
+            this.classList.add('selected');
+        });
+    });
+    
+    // Handle therapist selection
+    therapistCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const therapistId = this.dataset.therapistId;
+            console.log('Therapist clicked:', therapistId);
+            selectTherapist(therapistId);
+        });
+    });
+    
+    // Check if Bootstrap is loaded
+    console.log('Bootstrap available:', typeof bootstrap !== 'undefined');
+    console.log('Bootstrap Modal available:', typeof bootstrap !== 'undefined' && !!bootstrap.Modal);
+});
+
+function selectTherapist(therapistId) {
+    console.log('selectTherapist called with ID:', therapistId);
+    
+    // Simple validation
+    const selectedDate = document.getElementById('session-date').value;
+    const selectedTimeBtn = document.querySelector('.time-slot-btn.selected');
+    
+    if (!selectedDate) {
+        alert('Please select a date first');
+        return;
+    }
+    
+    if (!selectedTimeBtn) {
+        alert('Please select a time slot first');
+        return;
+    }
+    
+    console.log('Validation passed, showing booking form...');
+    
+    // Set form values
+    document.getElementById('selected-therapist-id').value = therapistId;
+    document.getElementById('selected-date').value = selectedDate;
+    document.getElementById('selected-time').value = selectedTimeBtn.dataset.time;
+    
+    // Show booking modal - simplified approach
+    const modalElement = document.getElementById('bookingModal');
+    if (modalElement) {
+        modalElement.style.display = 'block';
+        modalElement.classList.add('show');
+        document.body.classList.add('modal-open');
+        
+        // Add backdrop
+        const existingBackdrop = document.getElementById('modal-backdrop');
+        if (!existingBackdrop) {
+            const backdrop = document.createElement('div');
+            backdrop.className = 'modal-backdrop fade show';
+            backdrop.id = 'modal-backdrop';
+            backdrop.onclick = closeModal;
+            document.body.appendChild(backdrop);
+        }
+        
+        console.log('Modal should be visible now');
+    } else {
+        console.error('Modal element not found');
+        alert('Booking form not available');
+    }
+}
+
+function confirmBooking() {
+    console.log('confirmBooking called');
+    
+    // Get form data
+    const bookingData = {
+        therapist_id: document.getElementById('selected-therapist-id').value,
+        date: document.getElementById('selected-date').value,
+        time: document.getElementById('selected-time').value,
+        session_type: document.getElementById('session-type').value,
+        duration: document.getElementById('session-duration').value,
+        location: document.querySelector('input[name="location"]:checked')?.value || 'online',
+        notes: document.getElementById('session-notes').value
+    };
+    
+    console.log('Booking data:', bookingData);
+    
+    // Simple validation
+    if (!bookingData.session_type) {
+        alert('Please select a session type');
+        return;
+    }
+    
+    if (!bookingData.therapist_id) {
+        alert('Please select a therapist');
+        return;
+    }
+    
+    if (!bookingData.date) {
+        alert('Please select a date');
+        return;
+    }
+    
+    if (!bookingData.time) {
+        alert('Please select a time slot');
+        return;
+    }
+    
+    // Show loading state
+    const submitBtn = document.querySelector('#bookingModal .btn-primary');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Booking...';
+    }
+    
+    // For now, just show success message and close modal
+    // In a real app, you would send this to the server
+    setTimeout(() => {
+        // Add the new session to the booked sessions list
+        addSessionToList(bookingData);
+        
+        // Show success message
+        alert('Session booked successfully!');
+        
+        // Close modal
+        closeModal();
+        
+        // Reset button
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-calendar-check"></i> Confirm Booking';
+        }
+        
+        // Reset form
+        document.getElementById('session-type').value = '';
+        document.getElementById('session-notes').value = '';
+    }, 1000);
+}
+
+function addSessionToList(bookingData) {
+    // Get the therapist name
+    const therapistCard = document.querySelector(`[data-therapist-id="${bookingData.therapist_id}"]`);
+    const therapistName = therapistCard?.querySelector('.therapist-name')?.textContent || 'Therapist';
+    
+    // Create session HTML
+    const sessionHTML = `
+        <div class="session-item">
+            <div class="session-header">
+                <h6 class="therapist-name">${therapistName}</h6>
+                <span class="session-status status-confirmed">Confirmed</span>
+            </div>
+            <div class="session-details">
+                <p class="session-date">
+                    <i class="fas fa-calendar"></i> ${bookingData.date}
+                </p>
+                <p class="session-time">
+                    <i class="fas fa-clock"></i> ${bookingData.time}
+                </p>
+                <p class="session-type">
+                    <i class="fas fa-user"></i> ${bookingData.session_type}
+                </p>
+                <p class="session-location">
+                    <i class="fas fa-map-marker-alt"></i> ${bookingData.location === 'online' ? 'Online (Video Call)' : 'In-Person at Clinic'}
+                </p>
+            </div>
+            <div class="session-actions">
+                <button class="btn btn-sm btn-outline-danger" onclick="cancelSession('temp-${Date.now()}')">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-sm btn-outline-primary" onclick="viewSessionDetails('temp-${Date.now()}')">
+                    <i class="fas fa-eye"></i> Details
+                </button>
+            </div>
+        </div>
+    `;
+    
+    // Get the sessions list or create it
+    let sessionsList = document.querySelector('.sessions-list');
+    
+    // If no sessions exist, create the list
+    if (!sessionsList) {
+        const noSessions = document.querySelector('.no-sessions');
+        if (noSessions) {
+            noSessions.remove();
+        }
+        
+        const cardBody = document.querySelector('.sessions-panel .card-body');
+        cardBody.innerHTML = '<div class="sessions-list"></div>';
+        sessionsList = document.querySelector('.sessions-list');
+    }
+    
+    // Add the new session at the top
+    sessionsList.insertAdjacentHTML('afterbegin', sessionHTML);
+}
+
+function cancelSession(sessionId) {
+    if (confirm('Are you sure you want to cancel this session?')) {
+        // For now, just remove from the UI
+        const sessionElement = document.querySelector(`[onclick*="${sessionId}"]`)?.closest('.session-item');
+        if (sessionElement) {
+            sessionElement.style.transition = 'opacity 0.3s';
+            sessionElement.style.opacity = '0';
+            setTimeout(() => {
+                sessionElement.remove();
+                // Check if no sessions left
+                const sessionsList = document.querySelector('.sessions-list');
+                if (sessionsList && sessionsList.children.length === 0) {
+                    sessionsList.innerHTML = `
+                        <div class="no-sessions">
+                            <i class="fas fa-calendar-times text-muted"></i>
+                            <p class="text-muted">No sessions booked yet</p>
+                            <p class="text-muted small">Book your first therapy session below</p>
+                        </div>
+                    `;
+                }
+            }, 300);
+        }
+        alert('Session cancelled successfully!');
+        
+        // In a real app, you would also call the server:
+        // fetch(`/counseling/cancel-session/${sessionId}`, { method: 'POST' })
+        //     .then(response => response.json())
+        //     .then(data => { ... });
+    }
+}
+
+function rescheduleSession(sessionId) {
+    alert('Reschedule functionality coming soon!');
+}
+
+function viewSessionDetails(sessionId) {
+    alert('Session details functionality coming soon!');
+}
+
+function viewTherapistDetails(therapistId) {
+    window.location.href = `/counseling/therapist/${therapistId}`;
+}
+
+
+
+function closeModal() {
+    console.log('closeModal called');
+    const modalElement = document.getElementById('bookingModal');
+    if (modalElement) {
+        modalElement.style.display = 'none';
+        modalElement.classList.remove('show');
+        document.body.classList.remove('modal-open');
+        
+        // Remove backdrop
+        const backdrop = document.getElementById('modal-backdrop');
+        if (backdrop) {
+            backdrop.remove();
+        }
+        console.log('Modal closed');
+    }
+}
+
+// Add event listeners for modal close buttons
+document.addEventListener('DOMContentLoaded', function() {
+    // Close modal when clicking close button
+    const closeButtons = document.querySelectorAll('[data-bs-dismiss="modal"], .btn-close');
+    closeButtons.forEach(button => {
+        button.addEventListener('click', closeModal);
+    });
+    
+    // Close modal when clicking outside
+    const modalElement = document.getElementById('bookingModal');
+    if (modalElement) {
+        modalElement.addEventListener('click', function(e) {
+            if (e.target === modalElement) {
+                closeModal();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+

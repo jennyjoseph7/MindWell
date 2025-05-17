@@ -53,6 +53,10 @@
                                     <button class="duration-btn" data-duration="45">45m</button>
                                     <button class="duration-btn" data-duration="60">60m</button>
                                 </div>
+                                <div class="custom-duration">
+                                    <input type="number" id="custom-focus" class="duration-input" min="1" max="240" placeholder="Custom (min)">
+                                    <button class="duration-btn" id="apply-custom-focus">Set</button>
+                                </div>
                             </div>
                             <div class="setting-group">
                                 <label>Break Duration</label>
@@ -61,7 +65,45 @@
                                     <button class="duration-btn" data-duration="10">10m</button>
                                     <button class="duration-btn" data-duration="15">15m</button>
                                 </div>
+                                <div class="custom-duration">
+                                    <input type="number" id="custom-break" class="duration-input" min="1" max="60" placeholder="Custom (min)">
+                                    <button class="duration-btn" id="apply-custom-break">Set</button>
+                                </div>
                             </div>
+                            <div class="setting-group">
+                                <label>Cycles</label>
+                                <div class="duration-btns">
+                                    <button class="duration-btn active" data-cycles="1">1</button>
+                                    <button class="duration-btn" data-cycles="2">2</button>
+                                    <button class="duration-btn" data-cycles="4">4</button>
+                                </div>
+                                <div class="custom-duration">
+                                    <input type="number" id="custom-cycles" class="duration-input" min="1" max="12" placeholder="Custom cycles">
+                                    <button class="duration-btn" id="apply-custom-cycles">Set</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pomodoro-extras mt-3">
+                            <div class="duration-btns" style="justify-content:center; gap:14px;">
+                                <select id="mood-before" class="duration-btn" style="padding:8px 12px; background:rgba(255,255,255,0.05);">
+                                    <option value="" selected disabled>Mood Before</option>
+                                    <option value="1">Very Sad</option>
+                                    <option value="2">Sad</option>
+                                    <option value="3">Neutral</option>
+                                    <option value="4">Happy</option>
+                                    <option value="5">Very Happy</option>
+                                </select>
+                                <select id="mood-after" class="duration-btn" style="padding:8px 12px; background:rgba(255,255,255,0.05);">
+                                    <option value="" selected disabled>Mood After</option>
+                                    <option value="1">Very Sad</option>
+                                    <option value="2">Sad</option>
+                                    <option value="3">Neutral</option>
+                                    <option value="4">Happy</option>
+                                    <option value="5">Very Happy</option>
+                                </select>
+                            </div>
+                            <div class="garden mt-4" id="garden"></div>
+                            <div class="garden-progress muted mt-2" id="gardenProgress" style="text-align:center; color:#cbd5e1; font-weight:600;"></div>
                         </div>
                     </div>
                 </div>
@@ -376,6 +418,15 @@
         display: flex;
         gap: 10px;
     }
+    .custom-duration { margin-top: 8px; display: flex; gap: 8px; align-items: center; }
+    .duration-input {
+        width: 120px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(46, 204, 113, 0.2);
+        background: rgba(255,255,255,0.06);
+        color: #f8fafc;
+    }
     
     .duration-btn {
         padding: 8px 20px;
@@ -653,6 +704,62 @@
         background: rgba(46, 204, 113, 0.2);
         color: #2ecc71;
     }
+/* Pomodoro garden visuals */
+.garden {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    min-height: 120px;
+}
+.garden-pot {
+    width: 80px;
+    height: 80px;
+    border-radius: 16px;
+    border: 3px solid rgba(46, 204, 113, 0.6);
+    background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(46,204,113,0.08));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.25), inset 0 0 16px rgba(46,204,113,0.18);
+        transition: transform 0.25s ease, background 0.25s ease, border-color 0.25s ease, filter 0.25s ease;
+        position: relative;
+        overflow: hidden;
+}
+.garden-pot span { font-size: 44px; line-height: 1; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25)); }
+.garden-pot.filled {
+    border-color: rgba(46, 204, 113, 1);
+    background: linear-gradient(180deg, rgba(46,204,113,0.18), rgba(46,204,113,0.1));
+    transform: translateY(-6px) scale(1.04);
+        filter: drop-shadow(0 6px 14px rgba(46,204,113,0.35));
+}
+
+/* Growth animation */
+@keyframes grow-pop {
+    0% { transform: scale(0.6); opacity: 0.5; }
+    60% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1.0); }
+}
+.garden-pot.filled span { animation: grow-pop 350ms ease-out; }
+
+    /* Subtle shine sweep */
+    .garden-pot::after {
+        content: '';
+        position: absolute;
+        top: -120%; left: -50%;
+        width: 60%; height: 300%;
+        transform: rotate(25deg);
+        background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.25), rgba(255,255,255,0));
+        opacity: 0; pointer-events: none;
+    }
+    .garden-pot.filled::after {
+        animation: shine-sweep 900ms ease-out forwards;
+    }
+    @keyframes shine-sweep {
+        0% { left: -60%; opacity: 0; }
+        30% { opacity: 0.6; }
+        100% { left: 140%; opacity: 0; }
+    }
 </style>
 
 <script>
@@ -671,6 +778,11 @@
         let seconds = 0;
         let isRunning = false;
         let isPaused = false;
+        let cycles = 1;
+        let completedCycles = 0;
+        let focusMinutes = 25;
+        let breakMinutes = 5;
+        let totalElapsed = 0; // seconds
         
         // Duration buttons
         const focusDurationBtns = document.querySelectorAll('.setting-group:first-child .duration-btn');
@@ -683,8 +795,63 @@
                 
                 minutes = parseInt(this.dataset.duration);
                 seconds = 0;
+                focusMinutes = minutes;
                 updateTimerDisplay();
             });
+        });
+
+        // Apply custom focus/break durations
+        document.getElementById('apply-custom-focus').addEventListener('click', function() {
+            if (isRunning) return;
+            const val = parseInt(document.getElementById('custom-focus').value);
+            if (!val || val < 1 || val > 240) return;
+            focusDurationBtns.forEach(b => b.classList.remove('active'));
+            minutes = val;
+            seconds = 0;
+            focusMinutes = minutes;
+            updateTimerDisplay();
+        });
+        document.getElementById('apply-custom-break').addEventListener('click', function() {
+            if (isRunning) return;
+            const val = parseInt(document.getElementById('custom-break').value);
+            if (!val || val < 1 || val > 60) return;
+            const breakButtons = document.querySelectorAll('.setting-group:nth-child(2) .duration-btn');
+            breakButtons.forEach(b => b.classList.remove('active'));
+            breakMinutes = val;
+        });
+
+        // Break duration buttons (second setting-group)
+        const breakDurationBtns = document.querySelectorAll('.setting-group:nth-child(2) .duration-btn');
+        breakDurationBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (isRunning) return;
+                breakDurationBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                breakMinutes = parseInt(this.dataset.duration);
+            });
+        });
+
+        // Cycles buttons (third setting-group)
+        const cycleBtns = document.querySelectorAll('.setting-group:nth-child(3) .duration-btn');
+        cycleBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (isRunning) return;
+                cycleBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                cycles = parseInt(this.dataset.cycles);
+                renderGarden();
+            });
+        });
+
+        // Custom cycles
+        document.getElementById('apply-custom-cycles').addEventListener('click', function() {
+            if (isRunning) return;
+            const val = parseInt(document.getElementById('custom-cycles').value);
+            if (!val || val < 1 || val > 12) return;
+            cycleBtns.forEach(b => b.classList.remove('active'));
+            cycles = val;
+            completedCycles = 0;
+            renderGarden();
         });
         
         // Start focus session
@@ -705,6 +872,9 @@
             pauseBtn.disabled = false;
             stopBtn.disabled = false;
             
+            // show garden centered when session starts
+            const garden = document.getElementById('garden');
+            garden.style.display = 'flex';
             timer = setInterval(updateTimer, 1000);
         });
         
@@ -730,6 +900,9 @@
             const activeDuration = document.querySelector('.setting-group:first-child .duration-btn.active');
             minutes = parseInt(activeDuration.dataset.duration);
             seconds = 0;
+            completedCycles = 0;
+            totalElapsed = 0;
+            renderGarden();
             
             updateTimerDisplay();
             statusText.textContent = 'Ready';
@@ -748,7 +921,7 @@
                     // Timer completed
                     clearInterval(timer);
                     isRunning = false;
-                    statusText.textContent = 'Completed';
+                    statusText.textContent = 'Break time';
                     statusIndicator.style.background = 'rgba(52, 152, 219, 0.1)';
                     statusIndicator.style.color = '#3498db';
                     
@@ -758,7 +931,16 @@
                     
                     // Play sound or notification
                     playNotification();
-                    
+                    completedCycles += 1;
+                    growGarden();
+                    // Auto-start break timer for Pomodoro
+                    if (completedCycles < cycles) {
+                        setTimeout(() => startBreak(), 500);
+                    } else {
+                        // Save session and celebrate
+                        savePomodoroSession();
+                        celebrateGarden();
+                    }
                     return;
                 }
                 minutes--;
@@ -768,6 +950,126 @@
             }
             
             updateTimerDisplay();
+            totalElapsed += 1;
+        }
+
+        function startBreak() {
+            statusText.textContent = 'On Break';
+            minutes = breakMinutes;
+            seconds = 0;
+            updateTimerDisplay();
+            isRunning = true;
+            pauseBtn.disabled = false;
+            stopBtn.disabled = false;
+            startBtn.disabled = true;
+            timer = setInterval(function() {
+                if (seconds === 0) {
+                    if (minutes === 0) {
+                        clearInterval(timer);
+                        isRunning = false;
+                        // After break, prep next focus cycle
+                        minutes = focusMinutes;
+                        seconds = 0;
+                        updateTimerDisplay();
+                        statusText.textContent = 'Ready';
+                        statusIndicator.style.background = 'rgba(39, 174, 96, 0.1)';
+                        statusIndicator.style.color = '#2ecc71';
+                        startBtn.disabled = false;
+                        pauseBtn.disabled = true;
+                        stopBtn.disabled = true;
+                    } else {
+                        minutes--;
+                        seconds = 59;
+                    }
+                } else {
+                    seconds--;
+                }
+                updateTimerDisplay();
+                totalElapsed += 1;
+            }, 1000);
+        }
+
+        // Garden visuals (one sprout per completed cycle)
+        function renderGarden() {
+            const garden = document.getElementById('garden');
+            garden.innerHTML = '';
+            garden.style.display = 'flex';
+            for (let i = 0; i < cycles; i++) {
+                const pot = document.createElement('div');
+                pot.className = 'garden-pot';
+                pot.dataset.filled = '0';
+                pot.innerHTML = '<span style="color:#2ecc71;opacity:0.2">🌱</span>';
+                garden.appendChild(pot);
+            }
+            updateGardenProgress();
+        }
+        function growGarden() {
+            const garden = document.getElementById('garden');
+            const pots = garden.querySelectorAll('.garden-pot');
+            if (completedCycles - 1 < pots.length) {
+                const pot = pots[completedCycles - 1];
+                pot.innerHTML = '<span style="color:#2ecc71">🌿</span>';
+                pot.dataset.filled = '1';
+                pot.classList.add('filled');
+            }
+            updateGardenProgress();
+        }
+        function updateGardenProgress() {
+            const label = document.getElementById('gardenProgress');
+            if (!label) return;
+            const total = Math.max(1, cycles);
+            const done = Math.min(completedCycles, total);
+            label.textContent = `Cycle ${done} of ${total}`;
+        }
+        renderGarden();
+
+        // Simple confetti/celebration animation
+        function celebrateGarden() {
+            const garden = document.getElementById('garden');
+            if (!garden) return;
+            for (let i = 0; i < 14; i++) {
+                const piece = document.createElement('div');
+                piece.style.position = 'absolute';
+                piece.style.width = '6px';
+                piece.style.height = '12px';
+                piece.style.background = ['#2ecc71','#27ae60','#a3e635','#86efac'][i%4];
+                piece.style.left = (garden.offsetLeft + garden.clientWidth/2) + 'px';
+                piece.style.top = (garden.offsetTop + garden.clientHeight/2) + 'px';
+                piece.style.borderRadius = '2px';
+                piece.style.pointerEvents = 'none';
+                piece.style.zIndex = 2;
+                document.body.appendChild(piece);
+                const angle = (Math.PI * 2) * (i / 14);
+                const distance = 80 + Math.random()*60;
+                const dx = Math.cos(angle) * distance;
+                const dy = Math.sin(angle) * distance;
+                piece.animate([
+                    { transform: 'translate(0,0)', opacity: 1 },
+                    { transform: `translate(${dx}px, ${dy}px) rotate(${Math.random()*360}deg)`, opacity: 0 }
+                ], { duration: 900 + Math.random()*400, easing: 'cubic-bezier(.2,.7,.3,1)' });
+                setTimeout(() => piece.remove(), 1400);
+            }
+        }
+
+        function savePomodoroSession() {
+            const moodBefore = parseInt(document.getElementById('mood-before').value || '0') || null;
+            const moodAfter = parseInt(document.getElementById('mood-after').value || '0') || null;
+            const focusScore = Math.max(0, Math.min(100, Math.round((cycles * focusMinutes) / ((cycles * focusMinutes) + (cycles * breakMinutes)) * 100)));
+            fetch('/api/save-focus-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cycles,
+                    focus_minutes: focusMinutes,
+                    break_minutes: breakMinutes,
+                    duration_seconds: totalElapsed,
+                    mood_before: moodBefore,
+                    mood_after: moodAfter,
+                    focus_score: focusScore
+                })
+            }).then(r => r.json()).then(() => {
+                console.log('Pomodoro session saved');
+            }).catch(err => console.error(err));
         }
         
         // Update timer display

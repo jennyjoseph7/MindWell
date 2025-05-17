@@ -1,0 +1,270 @@
+{% extends "base.html %}
+
+{% block title %}Crisis Resources - MindWell{% endblock %}
+
+{% block content %}
+<div class="crisis-resources-container">
+    <!-- Emergency Header -->
+    <div class="crisis-header bg-danger text-white py-4">
+        <div class="container">
+            <h1 class="display-4 text-center mb-0">
+                <i class="fas fa-exclamation-triangle"></i>
+                Crisis Resources
+            </h1>
+            <p class="lead text-center mt-2">You are not alone. Help is available right now.</p>
+        </div>
+    </div>
+
+    <div class="container py-5">
+        <!-- Immediate Help Section -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="card border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h3 class="mb-0">
+                            <i class="fas fa-phone"></i>
+                            Immediate Help - Available 24/7
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="crisis-contact-card text-center p-3 border rounded">
+                                    <i class="fas fa-phone-alt fa-2x text-danger mb-2"></i>
+                                    <h4>Suicide & Crisis Lifeline</h4>
+                                    <p class="crisis-number">988</p>
+                                    <p class="small">Call or text 988 for immediate support</p>
+                                    <a href="tel:988" class="btn btn-danger btn-lg">
+                                        <i class="fas fa-phone"></i> Call Now
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="crisis-contact-card text-center p-3 border rounded">
+                                    <i class="fas fa-comment-dots fa-2x text-primary mb-2"></i>
+                                    <h4>Crisis Text Line</h4>
+                                    <p class="crisis-number">Text HOME to 741741</p>
+                                    <p class="small">Text for crisis counseling</p>
+                                    <a href="sms:741741&body=HOME" class="btn btn-primary btn-lg">
+                                        <i class="fas fa-comment"></i> Text Now
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="crisis-contact-card text-center p-3 border rounded">
+                                    <i class="fas fa-ambulance fa-2x text-warning mb-2"></i>
+                                    <h4>Emergency Services</h4>
+                                    <p class="crisis-number">911</p>
+                                    <p class="small">For life-threatening emergencies</p>
+                                    <a href="tel:911" class="btn btn-warning btn-lg">
+                                        <i class="fas fa-phone"></i> Call 911
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Support Services -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="mb-0">
+                            <i class="fas fa-hands-helping"></i>
+                            Support Services
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="support-service p-3 border rounded">
+                                    <h5><i class="fas fa-heart text-danger"></i> National Alliance on Mental Illness (NAMI)</h5>
+                                    <p><strong>Phone:</strong> 1-800-950-NAMI (6264)</p>
+                                    <p><strong>Website:</strong> <a href="https://www.nami.org" target="_blank">nami.org</a></p>
+                                    <p>Provides support, education, and advocacy for people with mental illness and their families.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="support-service p-3 border rounded">
+                                    <h5><i class="fas fa-brain text-info"></i> Mental Health America</h5>
+                                    <p><strong>Phone:</strong> 1-800-950-6264</p>
+                                    <p><strong>Website:</strong> <a href="https://www.mhanational.org" target="_blank">mhanational.org</a></p>
+                                    <p>Promotes mental health, prevents mental illness, and improves care and treatment.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="support-service p-3 border rounded">
+                                    <h5><i class="fas fa-users text-success"></i> Crisis Intervention Services</h5>
+                                    <p><strong>Local Services:</strong> Check your local directory</p>
+                                    <p><strong>Search:</strong> "crisis intervention" + your city</p>
+                                    <p>Local crisis intervention teams provide immediate support in your community.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="support-service p-3 border rounded">
+                                    <h5><i class="fas fa-hospital text-warning"></i> Local Mental Health Centers</h5>
+                                    <p><strong>Find:</strong> Search "mental health center" + your city</p>
+                                    <p><strong>Emergency:</strong> Many have 24/7 crisis lines</p>
+                                    <p>Local mental health centers often provide crisis services and emergency support.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Self-Help Resources -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h3 class="mb-0">
+                            <i class="fas fa-tools"></i>
+                            Self-Help Resources
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="self-help-resource p-3 border rounded text-center">
+                                    <i class="fas fa-dumbbell fa-2x text-primary mb-2"></i>
+                                    <h5>Breathing Exercises</h5>
+                                    <p>Practice deep breathing to calm your nervous system.</p>
+                                    <a href="{{ url_for('breathing_exercise') }}" class="btn btn-outline-primary">
+                                        Try Breathing Exercise
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="self-help-resource p-3 border rounded text-center">
+                                    <i class="fas fa-music fa-2x text-success mb-2"></i>
+                                    <h5>Music Therapy</h5>
+                                    <p>Listen to calming music to help regulate your emotions.</p>
+                                    <a href="{{ url_for('music_therapy') }}" class="btn btn-outline-success">
+                                        Start Music Therapy
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="self-help-resource p-3 border rounded text-center">
+                                    <i class="fas fa-book fa-2x text-warning mb-2"></i>
+                                    <h5>Journaling</h5>
+                                    <p>Write down your thoughts and feelings to process them.</p>
+                                    <a href="{{ url_for('journal_new') }}" class="btn btn-outline-warning">
+                                        Start Journaling
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Safety Planning -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="card border-warning">
+                    <div class="card-header bg-warning text-dark">
+                        <h3 class="mb-0">
+                            <i class="fas fa-shield-alt"></i>
+                            Safety Planning
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>If you're having thoughts of suicide:</h5>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-check text-success"></i> <strong>Call 988</strong> - Suicide & Crisis Lifeline</li>
+                                    <li><i class="fas fa-check text-success"></i> <strong>Text HOME to 741741</strong> - Crisis Text Line</li>
+                                    <li><i class="fas fa-check text-success"></i> <strong>Call 911</strong> - For immediate emergencies</li>
+                                    <li><i class="fas fa-check text-success"></i> <strong>Go to the nearest emergency room</strong></li>
+                                    <li><i class="fas fa-check text-success"></i> <strong>Stay with someone you trust</strong></li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Create a safety plan:</h5>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-check text-info"></i> <strong>Identify warning signs</strong> that you're in crisis</li>
+                                    <li><i class="fas fa-check text-info"></i> <strong>List coping strategies</strong> that help you feel better</li>
+                                    <li><i class="fas fa-check text-info"></i> <strong>Identify trusted people</strong> you can contact</li>
+                                    <li><i class="fas fa-check text-info"></i> <strong>Remove means</strong> of self-harm from your environment</li>
+                                    <li><i class="fas fa-check text-info"></i> <strong>List professional resources</strong> you can contact</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Important Message -->
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-info text-center">
+                    <h4><i class="fas fa-heart"></i> You Matter</h4>
+                    <p class="mb-0">
+                        <strong>Your life has value and meaning.</strong> 
+                        These feelings are temporary, even when they feel overwhelming. 
+                        Please reach out for help - you don't have to face this alone.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.crisis-resources-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.crisis-header {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.crisis-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #dc3545;
+    margin: 0.5rem 0;
+}
+
+.crisis-contact-card {
+    transition: transform 0.2s ease;
+    background: #fff;
+}
+
+.crisis-contact-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.support-service, .self-help-resource {
+    background: #fff;
+    transition: transform 0.2s ease;
+}
+
+.support-service:hover, .self-help-resource:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.1rem;
+}
+
+.alert {
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}

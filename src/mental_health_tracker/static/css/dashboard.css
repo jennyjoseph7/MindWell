@@ -505,19 +505,21 @@
 }
 
 .mood-bg {
-    background-image: url('../img/nature-mood.jpg');
+    /* Remove missing asset to avoid 404 */
+    background-image: none;
 }
 
 .journal-bg {
-    background-image: url('../img/nature-journal.jpg');
+    background-image: none;
 }
 
 .music-bg {
-    background-image: url('../img/nature-music.jpg');
+    background-image: none;
 }
 
 .breathe-bg {
-    background-image: url('../img/nature-breathe.jpg');
+    /* Fallback image removed to avoid 404; use solid color or existing asset */
+    background-image: none;
 }
 
 /* Section Headings */
@@ -1033,3 +1035,9 @@
         font-size: 1.1rem;
     }
 }
+
+/* Spacing overrides to ensure cards don’t touch */
+.dashboard-page .card-grid { gap: 1.25rem !important; align-items: start; }
+.dashboard-page .glass-card { margin-bottom: 1.25rem !important; }
+.dashboard-page .mood-journey-card { margin-bottom: 1.25rem !important; }
+.dashboard-page .chart-container { margin-top: 0.75rem !important; margin-bottom: 1rem !important; }

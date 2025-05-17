@@ -1,0 +1,438 @@
+{% extends "base.html" %}
+
+{% block title %}{{ therapist.name }} - Therapist Details - MindWell{% endblock %}
+
+{% block content %}
+<div class="therapist-details-container">
+    <div class="container">
+        <!-- Back Button -->
+        <div class="mb-3">
+            <a href="{{ url_for('counseling.booking') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Back to Booking
+            </a>
+        </div>
+
+        <!-- Therapist Header -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="therapist-image-large">
+                            <img src="{{ therapist.image }}" alt="{{ therapist.name }}" 
+                                 onerror="this.src='/static/images/default-therapist.jpg'">
+                        </div>
+                    </div>
+                    <div class="col-md-9">
+                        <h1 class="therapist-name">{{ therapist.name }}</h1>
+                        <p class="therapist-specialty">{{ therapist.specialty }}</p>
+                        
+                        <div class="therapist-rating mb-3">
+                            <span class="stars">
+                                {% for i in range(5) %}
+                                    {% if i < therapist.rating %}
+                                        <i class="fas fa-star text-warning"></i>
+                                    {% else %}
+                                        <i class="far fa-star text-warning"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </span>
+                            <span class="rating-text">{{ therapist.rating }} (4.8/5)</span>
+                        </div>
+                        
+                        <div class="therapist-quick-info">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><i class="fas fa-briefcase"></i> {{ therapist.experience }} experience</p>
+                                    <p><i class="fas fa-map-marker-alt"></i> {{ therapist.location }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><i class="fas fa-rupee-sign"></i> {{ therapist.price_per_session }}/session</p>
+                                    <p><i class="fas fa-route"></i> {{ therapist.distance }} away</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Therapist Information -->
+            <div class="col-lg-8">
+                <!-- About Section -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-user"></i> About Dr. {{ therapist.name.split()[-1] }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="therapist-description">{{ therapist.description }}</p>
+                        
+                        <h6>Specializations:</h6>
+                        <ul class="specializations-list">
+                            <li>Individual Therapy</li>
+                            <li>Cognitive Behavioral Therapy (CBT)</li>
+                            <li>Mindfulness-Based Therapy</li>
+                            <li>Anxiety and Depression Treatment</li>
+                            <li>Stress Management</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Experience & Education -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-graduation-cap"></i> Experience & Education
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="timeline">
+                            <div class="timeline-item">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <h6>Current Position</h6>
+                                    <p>Senior Clinical Psychologist at MindWell Clinic</p>
+                                    <small class="text-muted">2020 - Present</small>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <h6>Previous Experience</h6>
+                                    <p>Clinical Psychologist at {{ therapist.location.split(',')[0] }} Mental Health Center</p>
+                                    <small class="text-muted">2018 - 2020</small>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <h6>Education</h6>
+                                    <p>Ph.D. in Clinical Psychology from NIMHANS, Bangalore</p>
+                                    <small class="text-muted">2015 - 2018</small>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <h6>Master's Degree</h6>
+                                    <p>M.Sc. in Psychology from University of Delhi</p>
+                                    <small class="text-muted">2013 - 2015</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Languages -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-language"></i> Languages Spoken
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="languages-list">
+                            {% for language in therapist.languages %}
+                            <span class="language-tag">{{ language }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Booking Sidebar -->
+            <div class="col-lg-4">
+                <div class="card booking-sidebar">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calendar-plus"></i> Book Session
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="therapist-summary">
+                            <h6>{{ therapist.name }}</h6>
+                            <p class="specialty">{{ therapist.specialty }}</p>
+                            <p class="price">{{ therapist.price_per_session }}/session</p>
+                        </div>
+                        
+                        <div class="availability-info">
+                            <h6>Availability</h6>
+                            <p><i class="fas fa-clock"></i> {{ therapist.availability }}</p>
+                        </div>
+                        
+                        <div class="session-types">
+                            <h6>Session Types Available</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success"></i> Individual Therapy</li>
+                                <li><i class="fas fa-check text-success"></i> Online Sessions</li>
+                                <li><i class="fas fa-check text-success"></i> In-Person Sessions</li>
+                            </ul>
+                        </div>
+                        
+                        <button class="btn btn-primary w-100" onclick="bookWithTherapist('{{ therapist.id }}')">
+                            <i class="fas fa-calendar-check"></i> Book Session
+                        </button>
+                        
+                        <div class="contact-info mt-3">
+                            <h6>Contact Information</h6>
+                            <p><i class="fas fa-phone"></i> +91-98765-43210</p>
+                            <p><i class="fas fa-envelope"></i> {{ therapist.name.lower().replace(' ', '.') }}@mindwell.com</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reviews Section -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-star"></i> Client Reviews
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="review-item">
+                            <div class="review-header">
+                                <strong>Priya S.</strong>
+                                <div class="review-rating">
+                                    <i class="fas fa-star text-warning"></i>
+                                    <i class="fas fa-star text-warning"></i>
+                                    <i class="fas fa-star text-warning"></i>
+                                    <i class="fas fa-star text-warning"></i>
+                                    <i class="fas fa-star text-warning"></i>
+                                </div>
+                            </div>
+                            <p class="review-text">"Dr. {{ therapist.name.split()[-1] }} helped me overcome my anxiety. Very professional and understanding."</p>
+                            <small class="text-muted">2 weeks ago</small>
+                        </div>
+                        
+                        <div class="review-item">
+                            <div class="review-header">
+                                <strong>Rajesh K.</strong>
+                                <div class="review-rating">
+                                    <i class="fas fa-star text-warning"></i>
+                                    <i class="fas fa-star text-warning"></i>
+                                    <i class="fas fa-star text-warning"></i>
+                                    <i class="fas fa-star text-warning"></i>
+                                    <i class="far fa-star text-warning"></i>
+                                </div>
+                            </div>
+                            <p class="review-text">"Great therapist, very patient and knowledgeable. Highly recommended!"</p>
+                            <small class="text-muted">1 month ago</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.therapist-details-container {
+    min-height: calc(100vh - 56px);
+    background: #f8f9fa;
+    padding: 2rem 0;
+}
+
+.therapist-image-large img {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 5px solid #667eea;
+}
+
+.therapist-name {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.therapist-specialty {
+    font-size: 1.2rem;
+    color: #667eea;
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+.therapist-rating {
+    font-size: 1.1rem;
+}
+
+.rating-text {
+    margin-left: 0.5rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.therapist-quick-info p {
+    margin: 0.5rem 0;
+    color: #6c757d;
+}
+
+.specializations-list {
+    list-style: none;
+    padding: 0;
+}
+
+.specializations-list li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.specializations-list li:before {
+    content: "✓";
+    color: #28a745;
+    font-weight: bold;
+    margin-right: 0.5rem;
+}
+
+.timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline:before {
+    content: '';
+    position: absolute;
+    left: 1rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #667eea;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 2rem;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -2rem;
+    top: 0.5rem;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #667eea;
+    border: 3px solid white;
+    box-shadow: 0 0 0 3px #667eea;
+}
+
+.timeline-content h6 {
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.timeline-content p {
+    margin-bottom: 0.25rem;
+    color: #6c757d;
+}
+
+.languages-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.language-tag {
+    background: #667eea;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.booking-sidebar {
+    position: sticky;
+    top: 2rem;
+}
+
+.therapist-summary h6 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.therapist-summary .specialty {
+    color: #667eea;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.therapist-summary .price {
+    color: #28a745;
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+.availability-info h6,
+.session-types h6,
+.contact-info h6 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.availability-info p,
+.contact-info p {
+    margin: 0.25rem 0;
+    color: #6c757d;
+}
+
+.session-types ul li {
+    padding: 0.25rem 0;
+    color: #6c757d;
+}
+
+.review-item {
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
+.review-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.review-rating {
+    font-size: 0.9rem;
+}
+
+.review-text {
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .therapist-name {
+        font-size: 2rem;
+    }
+    
+    .therapist-image-large img {
+        width: 150px;
+        height: 150px;
+    }
+}
+</style>
+
+<script>
+function bookWithTherapist(therapistId) {
+    // Redirect to booking page with therapist pre-selected
+    window.location.href = `/counseling/booking?therapist=${therapistId}`;
+}
+</script>
+{% endblock %}
+

@@ -729,6 +729,7 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
+                    credentials: 'same-origin',
                     body: JSON.stringify({
                         score,
                         duration,
@@ -736,11 +737,14 @@
                     })
                 });
 
+                let payload = null;
+                try { payload = await response.json(); } catch(e) { /* ignore */ }
                 if (!response.ok) {
+                    console.error('Save failed response:', payload || '<no body>');
                     throw new Error('Failed to save game statistics');
                 }
                 
-                console.log('Game statistics saved successfully');
+                console.log('Game statistics saved successfully', payload);
             } catch (error) {
                 console.error('Error saving game statistics:', error);
             }

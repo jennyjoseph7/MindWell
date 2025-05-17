@@ -21,6 +21,18 @@ from .models import (
     ColorMatchingGame
 )
 
+# Import crisis models
+from .crisis_models import (
+    CrisisIncident,
+    EmergencyContact,
+    CrisisTherapySession,
+    CrisisNotification,
+    CrisisResource,
+    WellnessCheck,
+    CrisisPattern,
+    CrisisConfig
+)
+
 __all__ = [
     'db',
     'User',
@@ -31,5 +43,13 @@ __all__ = [
     'ChatHistory',
     'BreathingExercise',
     'TicTacToeGame',
-    'ColorMatchingGame'
+    'ColorMatchingGame',
+    'CrisisIncident',
+    'EmergencyContact',
+    'CrisisTherapySession',
+    'CrisisNotification',
+    'CrisisResource',
+    'WellnessCheck',
+    'CrisisPattern',
+    'CrisisConfig'
 ]

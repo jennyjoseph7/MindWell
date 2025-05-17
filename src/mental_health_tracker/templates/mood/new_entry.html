@@ -313,11 +313,30 @@
             font-size: 1.8rem;
         }
     }
+    
+    /* Journal form styling (light, modern) */
+    .mood-journal-scope .journal-form-modern {
+        background-color: #ffffff !important;
+        border: 1px solid #eef0f2 !important;
+        border-radius: 16px !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.06) !important;
+        padding: 1.5rem !important;
+    }
+    .mood-journal-scope .journal-form-modern h4 { margin: 0 0 1rem; color: #333 !important; }
+    .mood-journal-scope .journal-form .form-label { color: #333 !important; font-weight: 600; }
+    .mood-journal-scope .journal-form .form-text { color: #6c757d !important; }
+    .mood-journal-scope .journal-form .form-control { background-color: #ffffff !important; color: #333 !important; border: 1px solid #e5e7eb !important; }
+    .mood-journal-scope .journal-mood-selector .mood-list { background-color: #f7f9fb !important; border: 1px solid #eef0f2 !important; }
+    .mood-journal-scope .journal-mood-selector .mood-button { background-color: #ffffff !important; box-shadow: none !important; border: 1px solid #eef0f2 !important; }
+    .mood-journal-scope .journal-mood-selector .mood-button:hover { background-color: #f9fbfd !important; }
+    .mood-journal-scope .journal-mood-selector .mood-button.active { background-color: #f1f7ff !important; border-color: #cfe4ff !important; }
+    .mood-journal-scope .btn-primary { background-color: #0d6efd !important; border-color: #0d6efd !important; }
+    .mood-journal-scope .btn-secondary { background-color: #e9ecef !important; color: #333 !important; border-color: #e9ecef !important; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="mood-page">
+<div class="mood-page mood-journal-scope">
     <!-- Top Header Section -->
     <div class="container-fluid header-section">
         <div class="container py-4">
@@ -335,99 +354,68 @@
         </div>
     </div>
 
-    <!-- Main Content Section -->
-    <div class="container py-4">
+    <!-- Main Content Section (journal-styled) -->
+    <div class="container py-4" style="background: transparent;">
         <div class="row">
-            <!-- Mood Entry Form -->
-            <div class="col-lg-8">
-                <div class="card mood-card shadow-lg">
-                    <div class="card-body p-4">
-                        <h3 class="card-title mb-4">How are you feeling?</h3>
-                        <form method="POST" action="{{ url_for('mood_new') }}" id="moodForm">
-                            <!-- Mood Selector -->
-                            <div class="mb-4">
-                                <div class="mood-title">
-                                    <i class="bi bi-emoji-smile"></i> Select your mood
-                                </div>
-                                
-                                <div class="mood-list">
-                                    <button type="button" class="mood-button" data-mood="1">
-                                        <div class="mood-emoji">😢</div>
-                                        <div class="mood-label">Very Sad</div>
-                                    </button>
-                                    <button type="button" class="mood-button" data-mood="2">
-                                        <div class="mood-emoji">😔</div>
-                                        <div class="mood-label">Sad</div>
-                                    </button>
-                                    <button type="button" class="mood-button active" data-mood="3">
-                                        <div class="mood-emoji">😐</div>
-                                        <div class="mood-label">Neutral</div>
-                                    </button>
-                                    <button type="button" class="mood-button" data-mood="4">
-                                        <div class="mood-emoji">😊</div>
-                                        <div class="mood-label">Happy</div>
-                                    </button>
-                                    <button type="button" class="mood-button" data-mood="5">
-                                        <div class="mood-emoji">😄</div>
-                                        <div class="mood-label">Very Happy</div>
-                                    </button>
-                                </div>
-                                
-                                <!-- Hidden input field for mood score -->
-                                <input type="hidden" name="mood_score" id="mood_score" value="3">
-                            </div>
-                            
-                            <!-- Notes Field -->
-                            <div class="mb-4">
-                                <label for="notes" class="form-label">
-                                    <i class="bi bi-pencil-fill"></i> Notes
-                                </label>
-                                <textarea class="form-control" id="notes" name="notes" rows="5" 
-                                    placeholder="What's contributing to your mood today? (optional)"></textarea>
-                            </div>
-                            
-                            <!-- Submit Button -->
-                            <div class="d-flex justify-content-end mt-4">
-                                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary me-2">
-                                    <i class="bi bi-x"></i> Cancel
-                                </a>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-check-circle"></i> Save Mood
+            <!-- Mood Entry Form (Journal-styled) -->
+            <div class="col-lg-8 mb-4">
+                <div class="journal-form-modern">
+                    <h4 class="fw-semibold mb-4">New Mood Entry</h4>
+                    <form method="POST" action="{{ url_for('mood_new') }}" class="journal-form" id="moodForm">
+                        <div class="mb-4 journal-mood-selector">
+                            <label class="form-label">How are you feeling?</label>
+                            <div class="mood-list">
+                                <button type="button" class="mood-button" data-mood="1">
+                                    <div class="mood-emoji">😢</div>
+                                    <div class="mood-label">Very Sad</div>
+                                </button>
+                                <button type="button" class="mood-button" data-mood="2">
+                                    <div class="mood-emoji">😔</div>
+                                    <div class="mood-label">Sad</div>
+                                </button>
+                                <button type="button" class="mood-button active" data-mood="3">
+                                    <div class="mood-emoji">😐</div>
+                                    <div class="mood-label">Neutral</div>
+                                </button>
+                                <button type="button" class="mood-button" data-mood="4">
+                                    <div class="mood-emoji">😊</div>
+                                    <div class="mood-label">Happy</div>
+                                </button>
+                                <button type="button" class="mood-button" data-mood="5">
+                                    <div class="mood-emoji">😄</div>
+                                    <div class="mood-label">Very Happy</div>
                                 </button>
                             </div>
-                        </form>
-                    </div>
+                            <div class="form-text">Choose the mood that best describes your current state</div>
+                            <input type="hidden" name="mood_score" id="mood_score" value="3">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="notes">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="8"></textarea>
+                            <div class="form-text">Write freely about your thoughts and feelings</div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary rounded-pill">
+                                <i class="fas fa-arrow-left me-2"></i>Back
+                            </a>
+                            <button type="submit" class="btn btn-primary rounded-pill px-4">
+                                <i class="fas fa-save me-2"></i>Save Entry
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
             
             <!-- Sidebar -->
             <div class="col-lg-4 mt-4 mt-lg-0">
-                <!-- Tips Card -->
-                <div class="card shadow-sm">
-                    <div class="card-header d-flex align-items-center">
-                        <i class="bi bi-info-circle-fill text-primary me-2"></i>
-                        <h5 class="card-title mb-0">Mood Tracking Tips</h5>
-                    </div>
-                    <div class="card-body">
-                        <ul class="tip-list">
-                            <li>
-                                <span class="tip-title">Be consistent</span>
-                                <p class="tip-desc">Track your mood at similar times each day for better insights.</p>
-                            </li>
-                            <li>
-                                <span class="tip-title">Note influencing factors</span>
-                                <p class="tip-desc">Record what might be affecting your mood - sleep, exercise, etc.</p>
-                            </li>
-                            <li>
-                                <span class="tip-title">Look for patterns</span>
-                                <p class="tip-desc">Review your mood history to identify trends and triggers.</p>
-                            </li>
-                            <li>
-                                <span class="tip-title">Link to activities</span>
-                                <p class="tip-desc">Notice which activities improve or worsen your mood.</p>
-                            </li>
-                        </ul>
-                    </div>
+                <div class="journal-form-modern" style="padding:1rem 1.25rem;">
+                    <h6 class="fw-semibold mb-3" style="color:#333; display:flex; align-items:center;"><i class="bi bi-lightbulb-fill text-primary me-2"></i> Mood Tips</h6>
+                    <ul class="tip-list" style="margin:0;">
+                        <li><span class="tip-title">Be consistent</span><p class="tip-desc">Track your mood at similar times each day for better insights.</p></li>
+                        <li><span class="tip-title">Note influencing factors</span><p class="tip-desc">Record what might be affecting your mood - sleep, exercise, etc.</p></li>
+                        <li><span class="tip-title">Look for patterns</span><p class="tip-desc">Review your mood history to identify trends and triggers.</p></li>
+                        <li><span class="tip-title">Link to activities</span><p class="tip-desc">Notice which activities improve or worsen your mood.</p></li>
+                    </ul>
                 </div>
             </div>
         </div>

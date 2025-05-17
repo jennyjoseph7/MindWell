@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gratitude Wordle - MindWell</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #22c55e;
+            --primary-dark: #16a34a;
+            --primary-light: #86efac;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --text: #f8fafc;
+            --text-secondary: #94a3b8;
+            --correct: #16a34a;
+            --present: #eab308;
+            --absent: #334155;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            background-image: linear-gradient(rgba(15, 23, 42, 0.3), rgba(15, 23, 42, 0.4)), 
+                              url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1400&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        .container {
+            background: rgba(30, 41, 59, 0.7);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 560px;
+            position: relative;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background: var(--primary);
+            color: var(--text);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .back-btn:hover { background: var(--primary-dark); transform: translateY(-2px); }
+
+        .game-title {
+            text-align: center;
+            color: var(--primary);
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            margin-bottom: 1.25rem;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subhead { text-align: center; color: var(--text-secondary); margin-bottom: 1rem; }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(5, 56px);
+            gap: 0.5rem;
+            justify-content: center;
+            margin: 0 auto 1rem auto;
+        }
+
+        .tile {
+            width: 56px; height: 56px;
+            border-radius: 0.5rem;
+            background: var(--background);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.25rem; font-weight: 600;
+            text-transform: uppercase;
+            border: 1px solid rgba(255,255,255,0.15);
+            transition: transform 0.15s ease, background 0.2s ease;
+        }
+        .tile.filled { border-color: rgba(255,255,255,0.35); }
+        .tile.correct { background: var(--correct); border-color: var(--correct); }
+        .tile.present { background: var(--present); border-color: var(--present); }
+        .tile.absent { background: var(--absent); border-color: var(--absent); }
+
+        .keyboard { display: grid; gap: 0.5rem; justify-content: center; margin-top: 0.5rem; }
+        .key-row { display: flex; gap: 0.35rem; justify-content: center; }
+        .key {
+            background: var(--surface);
+            color: var(--text);
+            border: none; border-radius: 0.5rem;
+            padding: 0.5rem 0.6rem; cursor: pointer; font-weight: 600;
+        }
+        .key:hover { background: var(--primary-dark); }
+        .key.wide { padding: 0.5rem 0.9rem; }
+
+        .status { text-align: center; min-height: 1.5rem; margin: 0.5rem 0 0.75rem; color: var(--text); font-weight: 500; }
+
+        .gratitude-card { display: none; background: var(--background); border: 1px solid rgba(255,255,255,0.2); padding: 1rem; border-radius: 0.75rem; margin-top: 1rem; }
+        .gratitude-card h3 { color: var(--primary); margin-bottom: 0.5rem; font-size: 1.1rem; }
+        .gratitude-card textarea { width: 100%; min-height: 90px; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,0.2); background: var(--surface); color: var(--text); padding: 0.75rem; }
+        .actions { display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.75rem; }
+        .btn { background: var(--primary); color: var(--text); border: none; padding: 0.6rem 1rem; border-radius: 0.5rem; cursor: pointer; font-weight: 600; }
+        .btn:hover { background: var(--primary-dark); transform: translateY(-1px); }
+        .muted { color: var(--text-secondary); font-size: 0.9rem; text-align: center; margin-top: 0.25rem; }
+
+        @media (max-width: 480px) { .board { grid-template-columns: repeat(5, 48px); } .tile { width: 48px; height: 48px; } }
+    </style>
+    <meta name="robots" content="noindex" />
+    <meta name="referrer" content="no-referrer" />
+    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin" />
+    <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp" />
+    <meta http-equiv="Cross-Origin-Resource-Policy" content="same-origin" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+</head>
+<body>
+    <div class="container">
+        <button class="back-btn" onclick="window.location.href='/games'">← Back</button>
+        <h1 class="game-title">Gratitude Wordle</h1>
+        <div class="subhead">Daily 5-letter theme. After you solve it, write one gratitude note.</div>
+
+        <div id="board" class="board" role="grid" aria-label="Gratitude Wordle board"></div>
+        <div id="status" class="status" role="status" aria-live="polite"></div>
+
+        <div class="keyboard" aria-label="On-screen keyboard">
+            <div class="key-row" id="row1"></div>
+            <div class="key-row" id="row2"></div>
+            <div class="key-row" id="row3"></div>
+        </div>
+
+        <div id="gratitudeCard" class="gratitude-card">
+            <h3>One Gratitude Note</h3>
+            <textarea id="gratitudeText" placeholder="Write one thing you're grateful for today..."></textarea>
+            <div class="actions">
+                <button id="saveNote" class="btn">Save to Journal</button>
+                <button id="skipNote" class="btn" style="background:#334155">Skip</button>
+            </div>
+            <div id="streakInfo" class="muted"></div>
+        </div>
+    </div>
+
+    <script>
+        const WORDS = [
+            'SMILE','PEACE','THANK','GRACE','BLOOM','LIGHT','BLISS','SUNNY','CHEER','FAITH','UNITY','BRAVE','RELAX','HOPEY','HEART','POSIT','CALMZ'
+        ];
+        const ROWS = 6, COLS = 5;
+        let solution = getDailyWord();
+        let currentRow = 0, currentCol = 0;
+        let board = Array.from({ length: ROWS }, () => Array(COLS).fill(''));
+        let locked = false;
+
+        const boardEl = document.getElementById('board');
+        const statusEl = document.getElementById('status');
+        const gratitudeCard = document.getElementById('gratitudeCard');
+        const gratitudeText = document.getElementById('gratitudeText');
+        const streakInfo = document.getElementById('streakInfo');
+
+        // Build board tiles
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                tile.setAttribute('data-row', r);
+                tile.setAttribute('data-col', c);
+                boardEl.appendChild(tile);
+            }
+        }
+
+        // Build keyboard
+        const ROW1 = 'QWERTYUIOP';
+        const ROW2 = 'ASDFGHJKL';
+        const ROW3 = ['ENTER', 'ZXCVBNM', '⌫'];
+        function addKeyRow(rowStr, elId) {
+            const rowEl = document.getElementById(elId);
+            for (const ch of rowStr) {
+                const btn = document.createElement('button');
+                btn.className = 'key';
+                btn.textContent = ch;
+                btn.addEventListener('click', () => onKey(ch));
+                rowEl.appendChild(btn);
+            }
+        }
+        addKeyRow(ROW1, 'row1');
+        addKeyRow(ROW2, 'row2');
+        const row3El = document.getElementById('row3');
+        const enterBtn = document.createElement('button'); enterBtn.className = 'key wide'; enterBtn.textContent = 'ENTER'; enterBtn.addEventListener('click', () => onKey('ENTER')); row3El.appendChild(enterBtn);
+        for (const ch of ROW3[1]) { const b = document.createElement('button'); b.className = 'key'; b.textContent = ch; b.addEventListener('click', () => onKey(ch)); row3El.appendChild(b); }
+        const delBtn = document.createElement('button'); delBtn.className = 'key wide'; delBtn.textContent = '⌫'; delBtn.addEventListener('click', () => onKey('BACK')); row3El.appendChild(delBtn);
+
+        document.addEventListener('keydown', (e) => {
+            if (locked) return;
+            const k = e.key.toUpperCase();
+            if (k === 'ENTER') return onKey('ENTER');
+            if (k === 'BACKSPACE') return onKey('BACK');
+            if (/^[A-Z]$/.test(k)) return onKey(k);
+        });
+
+        function onKey(k) {
+            if (locked) return;
+            if (k === 'ENTER') return submitRow();
+            if (k === 'BACK') return backspace();
+            if (currentCol < COLS && /^[A-Z]$/.test(k)) {
+                setTile(currentRow, currentCol, k);
+                currentCol++;
+            }
+        }
+
+        function setTile(r, c, ch) {
+            board[r][c] = ch;
+            const tile = queryTile(r, c);
+            if (tile) { tile.textContent = ch; tile.classList.toggle('filled', !!ch); }
+        }
+        function queryTile(r, c) { return boardEl.querySelector(`.tile[data-row="${r}"][data-col="${c}"]`); }
+        function setStatus(msg) { statusEl.textContent = msg || ''; }
+
+        function submitRow() {
+            if (currentCol < COLS) { setStatus('Enter a 5-letter word'); return; }
+            const guess = board[currentRow].join('');
+            if (!isValidGuess(guess)) { setStatus('Try a positive word'); return; }
+            revealRow(guess);
+        }
+
+        function isValidGuess(word) {
+            return /^[A-Z]{5}$/.test(word);
+        }
+
+        function revealRow(guess) {
+            const solArr = solution.split('');
+            const res = Array(COLS).fill('absent');
+            const used = Array(COLS).fill(false);
+
+            // First pass: correct
+            for (let i = 0; i < COLS; i++) {
+                if (guess[i] === solArr[i]) { res[i] = 'correct'; used[i] = true; }
+            }
+            // Second pass: present
+            for (let i = 0; i < COLS; i++) {
+                if (res[i] === 'correct') continue;
+                const idx = solArr.findIndex((ch, j) => !used[j] && ch === guess[i]);
+                if (idx >= 0) { res[i] = 'present'; used[idx] = true; }
+            }
+
+            for (let i = 0; i < COLS; i++) {
+                const tile = queryTile(currentRow, i);
+                tile.classList.add(res[i]);
+            }
+
+            if (guess === solution) {
+                setStatus(`Great! The word was ${solution}.`);
+                locked = true;
+                recordWin();
+                showGratitudeCard();
+                return;
+            }
+
+            currentRow++;
+            currentCol = 0;
+            if (currentRow >= ROWS) {
+                setStatus(`Nice try! The word was ${solution}.`);
+                locked = true;
+                return;
+            }
+            setStatus('');
+        }
+
+        function backspace() {
+            if (currentCol > 0) {
+                currentCol--;
+                setTile(currentRow, currentCol, '');
+            }
+        }
+
+        function getDailyWord() {
+            const today = new Date();
+            const seed = today.getFullYear()*10000 + (today.getMonth()+1)*100 + today.getDate();
+            const idx = seededRandom(seed) % WORDS.length;
+            return WORDS[idx];
+        }
+        function seededRandom(seed) { // simple LCG
+            let x = (seed ^ 0xDEADBEEF) >>> 0;
+            x = (1664525 * x + 1013904223) >>> 0;
+            return x;
+        }
+
+        function showGratitudeCard() {
+            gratitudeCard.style.display = 'block';
+            const streak = computeStreak();
+            streakInfo.textContent = `Current weekly streak: ${streak} day${streak===1?'':'s'}`;
+        }
+
+        function recordWin() {
+            try {
+                const key = 'gratitudeWordleHistory';
+                const todayStr = new Date().toISOString().slice(0,10);
+                const arr = JSON.parse(localStorage.getItem(key) || '[]');
+                if (!arr.includes(todayStr)) { arr.push(todayStr); localStorage.setItem(key, JSON.stringify(arr)); }
+            } catch (e) {}
+        }
+        function computeStreak() {
+            try {
+                const key = 'gratitudeWordleHistory';
+                const arr = JSON.parse(localStorage.getItem(key) || '[]');
+                const today = new Date();
+                let streak = 0;
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date(today); d.setDate(today.getDate()-i);
+                    const ds = d.toISOString().slice(0,10);
+                    if (arr.includes(ds)) streak++; else break;
+                }
+                return streak;
+            } catch (e) { return 0; }
+        }
+
+        // Journal save via traditional POST form (compatible with Flask form route)
+        document.getElementById('saveNote').addEventListener('click', () => {
+            const txt = (gratitudeText.value || '').trim();
+            if (!txt) { setStatus('Please write one gratitude note.'); return; }
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/journal/new';
+            const title = document.createElement('input'); title.type = 'hidden'; title.name = 'title'; title.value = `Gratitude Wordle - ${new Date().toISOString().slice(0,10)}`; form.appendChild(title);
+            const content = document.createElement('input'); content.type = 'hidden'; content.name = 'content'; content.value = `Daily word: ${solution}\n\nGratitude: ${txt}`; form.appendChild(content);
+            document.body.appendChild(form);
+            form.submit();
+        });
+        document.getElementById('skipNote').addEventListener('click', () => {
+            gratitudeCard.style.display = 'none';
+        });
+
+        setStatus('Type your guess (5 letters) and press Enter');
+    </script>
+</body>
+</html>
+

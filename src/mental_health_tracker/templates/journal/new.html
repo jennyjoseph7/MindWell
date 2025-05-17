@@ -267,7 +267,7 @@
       <p class="text-muted mb-0">Express your thoughts and feelings freely</p>
     </div>
     <div class="col-md-4 text-end">
-      <a href="{{ url_for('journal.journal_list') }}" class="btn btn-outline-primary rounded-pill">
+      <a href="{{ url_for('journal_list') }}" class="btn btn-outline-primary rounded-pill">
         <i class="fas fa-list me-2"></i>View all entries
       </a>
     </div>
@@ -327,7 +327,7 @@
             <div class="form-text">Write freely about your thoughts and feelings</div>
           </div>
           <div class="d-flex justify-content-between align-items-center mt-4">
-            <a href="{{ url_for('journal.journal_list') }}" class="btn btn-secondary rounded-pill">
+            <a href="{{ url_for('journal_list') }}" class="btn btn-secondary rounded-pill">
               <i class="fas fa-arrow-left me-2"></i>Back
             </a>
             <button type="submit" class="btn btn-primary rounded-pill px-4">
@@ -364,4 +364,43 @@
     </div>
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle mood button clicks
+    const moodButtons = document.querySelectorAll('.mood-button');
+    const moodInputs = document.querySelectorAll('input[name="mood"]');
+    
+    moodButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const moodValue = this.getAttribute('data-mood');
+            
+            // Remove active class from all buttons
+            moodButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            // Check the corresponding radio input
+            const radioInput = document.getElementById('mood-' + moodValue);
+            if (radioInput) {
+                radioInput.checked = true;
+            }
+        });
+    });
+    
+    // Handle form validation
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const selectedMood = document.querySelector('input[name="mood"]:checked');
+            if (!selectedMood) {
+                e.preventDefault();
+                alert('Please select a mood before submitting.');
+                return false;
+            }
+        });
+    }
+});
+</script>
 {% endblock %} 

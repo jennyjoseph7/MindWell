@@ -508,6 +508,10 @@ def games():
 def games_dashboard():
     return render_template('games_dashboard.html')
 
+@app.route('/games/gratitude-wordle')
+def gratitude_wordle():
+    return render_template('games/gratitude_wordle.html')
+
 @app.route('/honor-score')
 def honor_score():
     return render_template('honor_score.html')
@@ -610,6 +614,51 @@ def journal_new():
             flash('Please log in to create a journal entry', 'error')
             return redirect(url_for('auth.login'))
             
+        # CRISIS DETECTION - Check journal content for crisis situations
+        from .utils.crisis_detection import CrisisDetector
+        from .utils.crisis_response import CrisisResponseManager
+        
+        crisis_detector = CrisisDetector()
+        crisis_response_manager = CrisisResponseManager()
+        
+        # Detect crisis in journal content
+        user_context = {'recent_mood_avg': 3, 'has_journal': True}  # Basic context
+        print(f"DEBUG: Checking journal content for crisis: '{content}'")
+        crisis_result = crisis_detector.detect_crisis(
+            text=content,
+            user_id=str(user_id),
+            context=user_context
+        )
+        print(f"DEBUG: Crisis detection result: {crisis_result}")
+        
+        # Handle crisis response if detected
+        crisis_actions = []
+        if crisis_result.get('crisis_detected', False):
+            print(f"DEBUG: CRISIS DETECTED in journal for user {user_id}: {crisis_result.get('crisis_level')}")
+            app.logger.warning(f"CRISIS DETECTED in journal for user {user_id}: {crisis_result.get('crisis_level')}")
+            
+            # Get user info for crisis response
+            from .models import User
+            user = User.query.get(user_id)
+            user_info = {
+                'id': user_id,
+                'name': user.name,
+                'email': user.email,
+                'phone': getattr(user, 'phone', None),
+                'emergency_contacts': get_user_emergency_contacts(user_id)
+            }
+            
+            # Handle crisis response
+            import asyncio
+            crisis_response = asyncio.run(crisis_response_manager.handle_crisis_response(
+                user_id=str(user_id),
+                crisis_data=crisis_result,
+                user_info=user_info
+            ))
+            
+            crisis_actions = crisis_response.get('actions_taken', [])
+            app.logger.warning(f"Crisis response actions taken: {len(crisis_actions)}")
+        
         # Analyze sentiment and emotions using AI
         sentiment_score, sentiment_label = analyze_sentiment(content)
         emotions_json = analyze_emotions(content)
@@ -618,11 +667,22 @@ def journal_new():
         emotions = json.loads(emotions_json)
         recommendations = generate_recommendations(emotions)
         
+        # Map mood string to mood score
+        mood_mapping = {
+            'very_sad': 1,
+            'sad': 2,
+            'neutral': 3,
+            'happy': 4,
+            'very_happy': 5
+        }
+        mood_score = mood_mapping.get(form.mood.data, 3)  # Default to neutral if not found
+        
         # Create new journal entry with AI analysis
         new_entry = JournalEntry(
             title=title,
             content=content,
             user_id=user_id,
+            mood_score=mood_score,
             sentiment_score=sentiment_score,
             sentiment_label=sentiment_label,
             key_emotions=emotions_json
@@ -634,10 +694,15 @@ def journal_new():
         # Track journal entry
         track_activity(user_id, 'journal', f'Added journal entry: {title}')
         
-        flash('Journal entry created successfully!', 'success')
+        # Show crisis alert if detected
+        if crisis_result.get('crisis_detected', False):
+            flash('We detected concerning content in your journal. We\'ve automatically booked a therapy session and notified your emergency contacts. Please check your notifications.', 'warning')
+        else:
+            flash('Journal entry created successfully!', 'success')
+        
         return redirect(url_for('journal.index'))
         
-    return render_template('journal_new.html', form=form)
+    return render_template('journal/new.html', form=form)
 
 def generate_recommendations(emotions):
     """Generate personalized recommendations based on emotional analysis"""
@@ -895,6 +960,25 @@ def calculate_emotional_stability(emotional_data):
         logger.error(f"Error calculating emotional stability: {str(e)}")
         return 0.5
 
+def get_user_emergency_contacts(user_id):
+    """Get emergency contacts for a user."""
+    try:
+        from .models import EmergencyContact
+        contacts = EmergencyContact.query.filter_by(user_id=user_id, is_active=True).all()
+        return [
+            {
+                'name': contact.contact_name,
+                'relationship': contact.relationship,
+                'phone': contact.phone,
+                'email': contact.email,
+                'is_primary': contact.is_primary
+            }
+            for contact in contacts
+        ]
+    except Exception as e:
+        app.logger.error(f"Error getting emergency contacts: {str(e)}")
+        return []
+
 @app.route('/mood-tracker/new', methods=['GET', 'POST'])
 def mood_new():
     if not session.get('user_id'):
@@ -907,6 +991,52 @@ def mood_new():
             mood_score = form.mood_score.data
             notes = form.notes.data
             activities = form.activities.data
+            
+            # CRISIS DETECTION - Check mood notes for crisis situations
+            crisis_actions = []
+            crisis_detected = False
+            
+            if notes:  # Only check if there are notes
+                from .utils.crisis_detection import CrisisDetector
+                from .utils.crisis_response import CrisisResponseManager
+                
+                crisis_detector = CrisisDetector()
+                crisis_response_manager = CrisisResponseManager()
+                
+                # Detect crisis in mood notes
+                user_context = {'current_mood': mood_score, 'recent_mood_avg': mood_score}
+                crisis_result = crisis_detector.detect_crisis(
+                    text=notes,
+                    user_id=str(session['user_id']),
+                    context=user_context
+                )
+                
+                # Handle crisis response if detected
+                if crisis_result.get('crisis_detected', False):
+                    app.logger.warning(f"CRISIS DETECTED in mood notes for user {session['user_id']}: {crisis_result.get('crisis_level')}")
+                    
+                    # Get user info for crisis response
+                    from .models import User
+                    user = User.query.get(session['user_id'])
+                    user_info = {
+                        'id': session['user_id'],
+                        'name': user.name,
+                        'email': user.email,
+                        'phone': getattr(user, 'phone', None),
+                        'emergency_contacts': get_user_emergency_contacts(session['user_id'])
+                    }
+                    
+                    # Handle crisis response
+                    import asyncio
+                    crisis_response = asyncio.run(crisis_response_manager.handle_crisis_response(
+                        user_id=str(session['user_id']),
+                        crisis_data=crisis_result,
+                        user_info=user_info
+                    ))
+                    
+                    crisis_actions = crisis_response.get('actions_taken', [])
+                    crisis_detected = True
+                    app.logger.warning(f"Crisis response actions taken: {len(crisis_actions)}")
             
             # Analyze sentiment of notes if provided
             sentiment_score = None
@@ -930,10 +1060,20 @@ def mood_new():
             mood_label = ['Very Sad', 'Sad', 'Neutral', 'Happy', 'Very Happy'][mood_score - 1]
             track_activity(session['user_id'], 'mood', f'Logged mood: {mood_label}')
             
-            flash('Mood entry created successfully!', 'success')
+            # Show crisis alert if detected
+            if crisis_detected:
+                flash('We detected concerning content in your mood notes. We\'ve automatically booked a therapy session and notified your emergency contacts. Please check your notifications.', 'warning')
+            else:
+                flash('Mood entry created successfully!', 'success')
+            
             return redirect(url_for('mood_tracker'))
     
     return render_template('mood/form.html', form=form)
+
+@app.route('/crisis-resources')
+def crisis_resources():
+    """Display crisis resources and emergency contacts."""
+    return render_template('ai/crisis_resources.html')
 
 @app.route('/mood-tracker/delete/<int:entry_id>', methods=['POST'])
 def mood_delete(entry_id):
@@ -1154,6 +1294,8 @@ def api_moods_latest():
         }
         for mood in reversed(moods)
     ])
+
+# Enhanced chatbot blueprint is registered in __init__.py
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -115,14 +115,16 @@
     /* Card grid adjustments */
     .card-grid {
         display: grid;
-        gap: 1rem;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.25rem; /* increase spacing between cards */
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        align-items: start;
     }
 
     /* Card height consistency */
     .glass-card {
         display: flex;
         flex-direction: column;
+        margin-bottom: 1.25rem; /* fallback spacing for stacked layout */
     }
 
     .glass-card .card-body {
@@ -137,7 +139,7 @@
 
     /* Chart container adjustments */
     .chart-container {
-        margin: 0.5rem 0;
+        margin: 0.75rem 0 1rem 0; /* add vertical breathing room */
     }
 
     /* Data summary spacing */
@@ -345,21 +347,7 @@
         box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
     }
     
-    .glass-card .card-glow {
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle at center, rgba(139, 195, 74, 0.1), transparent 70%);
-        opacity: 0;
-        transition: opacity 0.5s ease;
-        pointer-events: none;
-    }
-    
-    .glass-card:hover .card-glow {
-        opacity: 1;
-    }
+    /* removed legacy card glow overlay */
 
     /* Mood Journey card styles */
     .mood-journey-chart {
@@ -768,17 +756,7 @@
         color: #666;
     }
     
-    /* Glass card for mood journey */
-    .mood-journey-card .card-glow {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: radial-gradient(circle at 50% 0%, rgba(139, 195, 74, 0.15), transparent 60%);
-        pointer-events: none;
-        z-index: 0;
-    }
+    /* removed mood-journey card glow */
     
     /* Tip items styling */
     .tip-item {
@@ -1496,7 +1474,7 @@
             <!-- Welcome Message and Date -->
             <div class="welcome-section">
                 <div class="glass-card">
-                    <div class="card-glow"></div>
+                    
                     <div class="row align-items-center">
                         <div class="col-md-7">
                             <h2 class="welcome-heading">Welcome back, {{ current_user.name }}</h2>
@@ -1592,6 +1570,21 @@
                                 <div class="nature-bg breathe-bg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; transform: scale(1.1); transition: transform 0.5s ease;"></div>
                             </div>
                             <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 0; background: linear-gradient(to top, rgba(156, 39, 176, 0.1), transparent); transition: height 0.3s ease; z-index: 2;"></div>
+                        </a>
+                    </div>
+
+                    <div class="col-md-3 col-sm-6">
+                        <a href="/games/gratitude-wordle" class="action-card nature-card" style="background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); padding: 1.5rem; text-align: center; position: relative; transition: all 0.3s ease; text-decoration: none; display: flex; flex-direction: column; align-items: center; overflow: hidden; height: 100%; border: 1px solid rgba(139, 195, 74, 0.1);">
+                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: linear-gradient(to right, #4caf50, #2e7d32);"></div>
+                            <div class="action-icon" style="width: 70px; height: 70px; border-radius: 20px; background: linear-gradient(135deg, #e8f5e9, #e0f2f1); display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem; transition: all 0.35s ease; box-shadow: 0 8px 25px rgba(76, 175, 80, 0.2);">
+                                <i class="fas fa-emoji-smile" style="font-size: 28px; color: #2e7d32; transition: all 0.3s ease;"></i>
+                            </div>
+                            <div class="action-content" style="z-index: 5; position: relative;">
+                                <h4 style="font-size: 1.25rem; font-weight: 600; color: #333; margin-bottom: 0.5rem;">Gratitude Wordle</h4>
+                                <p style="font-size: 0.95rem; color: #666; margin-bottom: 0;">Daily 5-letter theme + gratitude note</p>
+                            </div>
+                            <div class="nature-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; overflow: hidden; opacity: 0.05; transition: opacity 0.3s ease;"></div>
+                            <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 0; background: linear-gradient(to top, rgba(76, 175, 80, 0.1), transparent); transition: height 0.3s ease; z-index: 2;"></div>
                         </a>
                     </div>
                 </div>
@@ -1747,7 +1740,6 @@
             <div class="dashboard-main-cards">
               <div class="card-grid">
                 <div class="glass-card mood-summary-card">
-                  <div class="card-glow"></div>
                   <div class="section-heading">
                     <div class="heading-icon">
                       <i class="fas fa-chart-line"></i>
@@ -1797,26 +1789,8 @@
                     {% endif %}
                   </div>
                 </div>
-                <div class="glass-card wellness-tips-card">
-                  <div class="card-glow"></div>
-                  <div class="section-heading" style="display: flex; align-items: center; margin-bottom: 1.75rem;">
-                    <div class="heading-icon" style="width: 48px; height: 48px; background: rgba(139, 195, 74, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 1rem; font-size: 20px; color: #8bc34a;">
-                      <i class="fas fa-lightbulb"></i>
-                    </div>
-                    <div class="heading-text">
-                      <h3 style="margin: 0; font-size: 1.35rem; font-weight: 600; color: #333333;">Nature-Inspired Tips</h3>
-                      <p style="margin: 0; font-size: 0.95rem; color: #717171;">Calming practices for today</p>
-                    </div>
-                  </div>
-                  <div id="tips-container" class="tips-list" style="margin-top: 1.5rem;"></div>
-                  <div style="text-align: center; margin-top: 2rem;">
-                    <button id="refresh-tips" style="background-color: #8bc34a; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 30px; font-size: 0.95rem; font-weight: 500; display: inline-flex; align-items: center; box-shadow: 0 4px 12px rgba(139, 195, 74, 0.3); cursor: pointer; transition: all 0.3s ease;">
-                      <i class="fas fa-sync-alt" style="margin-right: 0.6rem;"></i> Refresh Tips
-                    </button>
-                  </div>
-                </div>
+                
                 <div class="glass-card recent-activities-card">
-                  <div class="card-glow"></div>
                   <div class="section-heading">
                     <div class="heading-icon">
                       <i class="fas fa-history"></i>
@@ -1862,7 +1836,6 @@
                   </div>
                 </div>
                 <div class="glass-card journal-preview-card">
-                  <div class="card-glow"></div>
                   <div class="section-heading">
                     <div class="heading-icon">
                       <i class="fas fa-feather-alt"></i>
@@ -2423,12 +2396,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Journal Card Functionality
     function updateJournalCard() {
-        // Show loading state
-        document.getElementById('totalEntries').innerHTML = '<small><i class="fas fa-spinner fa-spin"></i></small>';
-        document.getElementById('averageMood').innerHTML = '<small><i class="fas fa-spinner fa-spin"></i></small>';
-        
+        const totalEntriesEl = document.getElementById('totalEntries');
+        const averageMoodEl = document.getElementById('averageMood');
         const insightsContainer = document.getElementById('journalInsights');
         const keywordsContainer = document.getElementById('journalKeywords');
+        if (!totalEntriesEl || !averageMoodEl || !insightsContainer || !keywordsContainer) {
+            return; // elements not present on this variant of dashboard
+        }
+        // Show loading state
+        totalEntriesEl.innerHTML = '<small><i class="fas fa-spinner fa-spin"></i></small>';
+        averageMoodEl.innerHTML = '<small><i class="fas fa-spinner fa-spin"></i></small>';
         
         fetch('/api/journal/summary')
             .then(response => {

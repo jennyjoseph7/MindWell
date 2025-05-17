@@ -27,6 +27,12 @@ class User(UserMixin, db.Model):
     chat_history = db.relationship('mental_health_tracker.models.models.ChatHistory', backref='user', lazy=True)
     breathing_sessions = db.relationship('mental_health_tracker.models.models.BreathingExercise', backref='user', lazy=True)
     
+    # Crisis-related relationships
+    crisis_incidents = db.relationship('CrisisIncident', back_populates='user', lazy=True)
+    emergency_contacts = db.relationship('EmergencyContact', back_populates='user', lazy=True)
+    wellness_checks = db.relationship('WellnessCheck', back_populates='user', lazy=True)
+    crisis_therapy_sessions = db.relationship('CrisisTherapySession', back_populates='user', lazy=True)
+    
     def set_password(self, password):
         """Set the user's password."""
         from werkzeug.security import generate_password_hash

@@ -37,7 +37,7 @@ try:
     sentiment_analyzer = SentimentAnalyzer()
     logger.info("Successfully initialized sentiment analyzer")
 except Exception as e:
-    logger.error(f"Error initializing sentiment analyzer: {str(e)}")
+    logger.warning(f"Sentiment analyzer not available: {str(e)}")
     sentiment_analyzer = None
 
 # Initialize Gemini
@@ -1405,13 +1405,14 @@ def extract_topics(message):
     
     return found_topics[:3]  # Return top 3 topics
 
-# Initialize singleton sentiment analyzer for the module
-try:
-    get_sentiment_pipeline()
-    get_emotion_pipeline()
-    logger.info("AI models initialized successfully")
-except Exception as e:
-    logger.error(f"Error initializing AI models: {str(e)}")
+# Initialize singleton sentiment analyzer for the module (optional)
+# Commented out to prevent startup issues - models will be loaded on demand
+# try:
+#     get_sentiment_pipeline()
+#     get_emotion_pipeline()
+#     logger.info("AI models initialized successfully")
+# except Exception as e:
+#     logger.warning(f"AI models not available: {str(e)}")
 
 # Legacy function for mood pattern analysis
 def get_mood_patterns(user_id, db, days=7):

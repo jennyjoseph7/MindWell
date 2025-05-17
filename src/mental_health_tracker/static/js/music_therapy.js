@@ -140,6 +140,7 @@ class MusicPlayer {
         // Feedback form events
         if (this.showFeedbackButton) this.showFeedbackButton.addEventListener('click', () => this.showFeedback());
         if (this.closeFeedbackButton) this.closeFeedbackButton.addEventListener('click', () => this.hideFeedback());
+        // extra X button removed from template; guard for older markup
         if (this.closeFeedbackXButton) this.closeFeedbackXButton.addEventListener('click', () => this.hideFeedback());
         if (this.feedbackForm) this.feedbackForm.addEventListener('submit', (e) => this.handleFeedbackSubmit(e));
         if (this.endSessionButton) this.endSessionButton.addEventListener('click', () => this.showFeedback());

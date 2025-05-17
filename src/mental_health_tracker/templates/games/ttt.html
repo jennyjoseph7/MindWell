@@ -50,6 +50,23 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
+        .controls {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .select {
+            background: var(--background);
+            color: var(--text);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            font-family: 'Poppins', sans-serif;
+        }
+
         .back-btn {
             position: absolute;
             top: 1rem;
@@ -252,6 +269,22 @@
             🔊
         </button>
         <h1 class="game-title">Nature's Tic Tac Toe</h1>
+        <div class="controls" aria-label="Game settings">
+            <select class="select" id="roleSelect" aria-label="Choose your symbol">
+                <option value="leaf" selected>Play as Leaf (X)</option>
+                <option value="twig">Play as Twig (O)</option>
+            </select>
+            <select class="select" id="difficultySelect" aria-label="Choose difficulty">
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+            </select>
+            <select class="select" id="startSelect" aria-label="Who starts">
+                <option value="player" selected>Player starts</option>
+                <option value="ai">AI starts</option>
+                <option value="random">Random</option>
+            </select>
+        </div>
         <div class="players">
             <div class="player-card" id="leafPlayer">
                 <svg class="player-symbol" viewBox="0 0 24 24" fill="currentColor">
@@ -280,7 +313,7 @@
             <button class="cell" role="gridcell" aria-label="Cell 9" data-index="8"></button>
         </div>
         <div class="status" id="status" role="status" aria-live="polite">Leaf's turn</div>
-        <button class="reset-btn" id="resetBtn" aria-label="Reset game">New Game</button>
+        <button class="reset-btn" id="resetBtn" type="button" onclick="resetGame();" aria-label="Reset game">New Game</button>
     </div>
 
     <script>
@@ -290,12 +323,18 @@
         let gameActive = true;
         let gameStartTime = Date.now();
         let soundEnabled = true;
+        let isAiTurn = false;
+        let playerSymbol = 'leaf';
+        let aiSymbol = 'twig';
+        let difficulty = 'medium'; // easy | medium | hard
+        let startOption = 'player'; // player | ai | random
 
         // Sound effects
         const sounds = {
-            place: new Audio('/static/sounds/place.mp3'),
-            win: new Audio('/static/sounds/win.mp3'),
-            draw: new Audio('/static/sounds/draw.mp3')
+            // Use existing audio assets to avoid 404s
+            place: new Audio("{{ url_for('static', filename='audio/focus/focus1.mp3') }}"),
+            win: new Audio("{{ url_for('static', filename='audio/energetic/energetic1.mp3') }}"),
+            draw: new Audio("{{ url_for('static', filename='audio/calm/calm1.mp3') }}")
         };
 
         // Winning combinations
@@ -315,45 +354,63 @@
                 </svg>`
         };
 
-        // Handle cell click
+        // Handle cell click (Human move)
         function handleCellClick(e) {
+            if (isAiTurn) return;
             const cell = e.target;
             const index = parseInt(cell.getAttribute('data-index'));
 
             if (gameState[index] !== '' || !gameActive) return;
 
-            gameState[index] = currentPlayer;
-            cell.innerHTML = symbols[currentPlayer];
+            // Human move
+            if (currentPlayer !== playerSymbol) return; // prevent playing when it's AI's turn
+            gameState[index] = playerSymbol;
+            cell.innerHTML = symbols[playerSymbol];
             cell.classList.add('filled');
             
             if (soundEnabled) {
                 sounds.place.play();
             }
 
-            checkResult();
+            // Check outcome
+            const outcome = evaluateBoard();
+            if (outcome) return;
+
+            // Switch to AI turn
+            isAiTurn = true;
+            currentPlayer = aiSymbol;
+            updateTurnStatus();
+            setTimeout(aiMove, 450);
         }
 
-        // Check for win or draw
-        function checkResult() {
-            let gameWon = false;
+        // Check for win or draw (no automatic turn change)
+        function checkResultOnly() {
             let winningCombo = null;
-
             for (const combo of winningCombos) {
                 const [a, b, c] = combo;
                 if (gameState[a] && gameState[a] === gameState[b] && gameState[a] === gameState[c]) {
-                    gameWon = true;
                     winningCombo = combo;
                     break;
                 }
             }
-
-            if (gameWon) {
+            if (winningCombo) {
                 endGame('win', winningCombo);
-            } else if (!gameState.includes('')) {
-                endGame('draw');
-            } else {
-                changePlayer();
+                return 'win';
             }
+            if (!gameState.includes('')) {
+                endGame('draw');
+                return 'draw';
+            }
+            return null;
+        }
+
+        // Evaluate board and end game if needed
+        function evaluateBoard() {
+            const result = checkResultOnly();
+            if (result) {
+                return true;
+            }
+            return false;
         }
 
         // End the game
@@ -374,7 +431,9 @@
 
             let message = '';
             if (result === 'win') {
-                message = `${currentPlayer === 'leaf' ? 'Leaf' : 'Twig'} wins!`;
+                // Determine winner from last mover
+                const winner = currentPlayer === 'leaf' ? 'Leaf' : 'Twig';
+                message = `${winner} wins!`;
                 updateScore(currentPlayer);
             } else {
                 message = "It's a draw!";
@@ -384,13 +443,138 @@
             saveGameStats(result === 'win' ? currentPlayer : 'draw', moves, duration);
         }
 
-        // Change the current player
-        function changePlayer() {
-            currentPlayer = currentPlayer === 'leaf' ? 'twig' : 'leaf';
+        // Update UI to reflect whose turn
+        function updateTurnStatus() {
             document.getElementById('status').textContent = `${currentPlayer === 'leaf' ? 'Leaf' : 'Twig'}'s turn`;
-            
-            document.getElementById('leafPlayer').classList.toggle('active');
-            document.getElementById('twigPlayer').classList.toggle('active');
+            const leafCard = document.getElementById('leafPlayer');
+            const twigCard = document.getElementById('twigPlayer');
+            if (currentPlayer === 'leaf') {
+                leafCard.classList.add('active');
+                twigCard.classList.remove('active');
+            } else {
+                leafCard.classList.remove('active');
+                twigCard.classList.add('active');
+            }
+        }
+
+        // AI move (Twig)
+        function aiMove() {
+            if (!gameActive) return;
+            const index = bestAIMove(aiSymbol, playerSymbol);
+            if (index === null || gameState[index] !== '') {
+                // Fallback: pick first available
+                const avail = getAvailableIndices(gameState);
+                if (avail.length === 0) return;
+                placeAIMove(avail[0]);
+            } else {
+                placeAIMove(index);
+            }
+
+            // Check outcome
+            const outcome = evaluateBoard();
+            if (outcome) return;
+
+            // Back to human
+            currentPlayer = playerSymbol;
+            isAiTurn = false;
+            updateTurnStatus();
+        }
+
+        function placeAIMove(index) {
+            const cell = document.querySelector(`[data-index="${index}"]`);
+            gameState[index] = aiSymbol;
+            cell.innerHTML = symbols[aiSymbol];
+            cell.classList.add('filled');
+            if (soundEnabled) {
+                sounds.place.play();
+            }
+        }
+
+        function getAvailableIndices(state) {
+            const res = [];
+            for (let i = 0; i < state.length; i++) {
+                if (state[i] === '') res.push(i);
+            }
+            return res;
+        }
+
+        function isWinningState(state, player) {
+            for (const [a, b, c] of winningCombos) {
+                if (state[a] === player && state[b] === player && state[c] === player) return true;
+            }
+            return false;
+        }
+
+        // AI selection based on difficulty
+        function bestAIMove(ai, human) {
+            const avail = getAvailableIndices(gameState);
+            if (avail.length === 0) return null;
+
+            if (difficulty === 'easy') {
+                return avail[Math.floor(Math.random() * avail.length)];
+            }
+
+            if (difficulty === 'medium') {
+                // Heuristic: win > block > center > corner > side
+                // 1) Can AI win now?
+                for (const idx of avail) {
+                    const tmp = gameState.slice();
+                    tmp[idx] = ai;
+                    if (isWinningState(tmp, ai)) return idx;
+                }
+                // 2) Block human win
+                for (const idx of avail) {
+                    const tmp = gameState.slice();
+                    tmp[idx] = human;
+                    if (isWinningState(tmp, human)) return idx;
+                }
+                // 3) Center
+                if (avail.includes(4)) return 4;
+                // 4) Corner
+                const corners = [0, 2, 6, 8].filter(i => avail.includes(i));
+                if (corners.length) return corners[Math.floor(Math.random() * corners.length)];
+                // 5) Any side
+                return avail[Math.floor(Math.random() * avail.length)];
+            }
+
+            // Hard: minimax optimal
+            let bestScore = -Infinity;
+            let move = avail[0];
+            for (const idx of avail) {
+                const tmp = gameState.slice();
+                tmp[idx] = ai;
+                const score = minimax(tmp, false, ai, human);
+                if (score > bestScore) {
+                    bestScore = score;
+                    move = idx;
+                }
+            }
+            return move;
+        }
+
+        function minimax(state, isMax, ai, human) {
+            if (isWinningState(state, ai)) return 10;
+            if (isWinningState(state, human)) return -10;
+            const avail = getAvailableIndices(state);
+            if (avail.length === 0) return 0;
+
+            if (isMax) {
+                let best = -Infinity;
+                for (const idx of avail) {
+                    const tmp = state.slice();
+                    tmp[idx] = ai;
+                    best = Math.max(best, minimax(tmp, false, ai, human));
+                }
+                return best;
+            } else {
+                let best = Infinity;
+                for (const idx of avail) {
+                    const tmp = state.slice();
+                    tmp[idx] = human;
+                    best = Math.min(best, minimax(tmp, true, ai, human));
+                }
+                return best;
+            }
         }
 
         // Reset the game
@@ -398,16 +582,21 @@
             gameState = ['', '', '', '', '', '', '', '', ''];
             gameActive = true;
             gameStartTime = Date.now();
-            currentPlayer = 'leaf';
+            // Apply current settings
+            aiSymbol = playerSymbol === 'leaf' ? 'twig' : 'leaf';
+            // Determine who starts
+            const starter = startOption === 'random' ? (Math.random() < 0.5 ? 'player' : 'ai') : startOption;
+            currentPlayer = starter === 'player' ? playerSymbol : aiSymbol;
+            isAiTurn = starter === 'ai';
             
             document.querySelectorAll('.cell').forEach(cell => {
                 cell.innerHTML = '';
                 cell.classList.remove('filled', 'winner');
             });
             
-            document.getElementById('status').textContent = "Leaf's turn";
-            document.getElementById('leafPlayer').classList.add('active');
-            document.getElementById('twigPlayer').classList.remove('active');
+            updateTurnStatus();
+            // If AI starts, make first move after short delay
+            if (isAiTurn) setTimeout(aiMove, 450);
         }
 
         // Update player score
@@ -453,10 +642,23 @@
         document.getElementById('resetBtn').addEventListener('click', resetGame);
         document.getElementById('soundToggle').addEventListener('click', toggleSound);
 
+        // Settings handlers
+        document.getElementById('roleSelect').addEventListener('change', (e) => {
+            playerSymbol = e.target.value;
+            aiSymbol = playerSymbol === 'leaf' ? 'twig' : 'leaf';
+            // Reset to apply role change
+            resetGame();
+        });
+        document.getElementById('difficultySelect').addEventListener('change', (e) => {
+            difficulty = e.target.value;
+        });
+        document.getElementById('startSelect').addEventListener('change', (e) => {
+            startOption = e.target.value;
+        });
+
         // Keyboard navigation
         document.addEventListener('keydown', (e) => {
-            if (!gameActive) return;
-
+            if (!gameActive || isAiTurn) return;
             const key = e.key;
             if (key >= '1' && key <= '9') {
                 const index = key - 1;
@@ -468,6 +670,11 @@
         });
 
         // Initialize game
+        // Defaults
+        playerSymbol = 'leaf';
+        aiSymbol = 'twig';
+        difficulty = 'medium';
+        startOption = 'player';
         resetGame();
     </script>
 </body>

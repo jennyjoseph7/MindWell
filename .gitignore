@@ -26,4 +26,24 @@ node_modules/
 
 # Task files
 tasks.json
-tasks/ 
+tasks/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+instance/
+
+# IDE
+.cursor/ 

@@ -453,7 +453,7 @@
     <div class="container">
         <a href="{{ url_for('index') }}" class="close-btn"><i class='bx bx-x'></i></a>
         <div class="form-box login">
-            <form action="{{ url_for('auth.login') }}" method="POST">
+            <form action="{{ url_for('login') }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <h1>Login</h1>
                 <div class="input-box">
@@ -465,14 +465,14 @@
                     <i class='bx bxs-lock-alt'></i>
                 </div>
                 <div class="forgot-link">
-                    <a href="{{ url_for('auth.reset_password') }}">Forgot Password?</a>
+                    <a href="{{ url_for('auth_reset_password') }}">Forgot Password?</a>
                 </div>
                 <button type="submit" class="btn">Login</button>
             </form>
         </div>
 
         <div class="form-box register">
-            <form action="{{ url_for('auth.register') }}" method="POST">
+            <form action="{{ url_for('register') }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <h1>Registration</h1>
                 <div class="input-box">
